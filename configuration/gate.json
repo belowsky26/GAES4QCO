@@ -1,0 +1,80 @@
+{
+    "": {},
+    "X": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "Y": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "Z": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "H": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "S": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "T": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "RX": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 1,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "RY": {
+        "qubit_id": 1,
+        "affected_qubits": 1,
+        "parameters": 1,
+        "control_qubits": 0,
+        "target_qubits": 0
+    },
+    "CNOT": {
+        "qubit_id": 1,
+        "affected_qubits": 2,
+        "parameters": 0,
+        "control_qubits": 1,
+        "target_qubits": 1
+    },
+    "CZ": {
+        "qubit_id": 1,
+        "affected_qubits": 2,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 1
+    },
+    "CXX": {
+        "qubit_id": 1,
+        "affected_qubits": 3,
+        "parameters": 0,
+        "control_qubits": 0,
+        "target_qubits": 0
+    }
+}
