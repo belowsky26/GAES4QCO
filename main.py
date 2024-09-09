@@ -1,21 +1,17 @@
-
-import numpy as np
-from dask.distributed import Client
-
+from copy import deepcopy
+from math import pi
+from qiskit import QuantumCircuit
+from qiskit.quantum_info import Statevector, state_fidelity
 from copy import deepcopy
 import itertools
 import inspect
-
-from qiskit.quantum_info import Statevector, state_fidelity
-from copy import deepcopy
+import random
 import math
+import numpy as np
+import time
 
 CROSSOVER = 80
 MUTATION = 5
-
-from qiskit import QuantumCircuit
-from math import pi
-import random
 
 class Circuit:
     def __init__(self, n_qubits, m_gates) -> None:
@@ -30,8 +26,11 @@ class Circuit:
         for gatesInDepth in self.gates:
             for gate in gatesInDepth:
                 parametersString = ""
-                for type, _, *parameter in gate.parameters:
-                    parametersString += f"{parameter[0]}"
+                for type, h, *parameter in gate.parameters:
+                    try:
+                        parametersString += f"{parameter[0]}"
+                    except Exception as e:
+                        print(f"Parameter errado = {type}, {h}, {parameter}")
                     if type == "float":
                         parametersString += f"*{pi}"
                     parametersString += ","
@@ -107,6 +106,8 @@ def createGateToListQubits(qubitsFree:list, structLocal:dict):
         elif param[0] == "float":
             param.append(random.uniform(0, 2))
             param.append(StepSize())
+        elif param[0] == "None":
+            param.append(None)
     gate = Gate(gateName, affectedQubits, gateCounts)
     return gate, qubitsFree
 
@@ -373,19 +374,21 @@ def getGatesWithCombinations(gates):
         gateInfo["info"]["combinations"] = [(x, x.count("int") + x.count("list[int]"), x.count("float"), x.count("str")) for x in combinacoes]
     return gatesLocal
 
-def main(i):
+def main(seed:int, numQubits:int, maxDepth:int, minDepth:int, lenPopulation:int, countGenerations:int):
+    print(f"---   TEST {seed}   ---")
+    inicio = time.time()
     classes = getGatesIntoModule(QuantumCircuit)
-    GATES_PARAMETERS = getGatesWithTypesParameters(classes)
-    GATES_PARAMETERS = getGatesWithCombinations(GATES_PARAMETERS)
-
-    print(f"---   TEST {i}   ---")
-    random.seed(i)
-    circuitTarget = createCircuit(4, 20, 20, GATES_PARAMETERS)
+    gatesParameters = getGatesWithTypesParameters(classes)
+    gatesParameters = getGatesWithCombinations(gatesParameters)
+    random.seed(seed)
+    circuitTarget = createCircuit(numQubits, maxDepth, maxDepth, gatesParameters)
     stateTarget = Statevector.from_instruction(circuitTarget.circuit)
-    populationInitial = initialPopulation(200, circuitTarget.n_qubits, circuitTarget.m_gates, 1, GATES_PARAMETERS)
-    for i, circuit in enumerate(populationInitial):
-        populationInitial[i] = applyFitnessIntoCircuit(circuit, stateTarget)
-    populationGen = generations(populationInitial, 10, circuitTarget.m_gates, stateTarget, GATES_PARAMETERS)
+    populationInitial = initialPopulation(lenPopulation, circuitTarget.n_qubits, circuitTarget.m_gates, minDepth, gatesParameters)
+    for x, circuit in enumerate(populationInitial):
+        populationInitial[x] = applyFitnessIntoCircuit(circuit, stateTarget)
+    populationGen = generations(populationInitial, countGenerations, circuitTarget.m_gates, stateTarget, gatesParameters)
+    fim = time.time() - inicio
+    print(f"Fim Test {seed} -- {fim}")
     result = {
         "target": {
             "circuit": circuitTarget,
@@ -408,45 +411,16 @@ def main(i):
     result["populationGen"]["upperBound"] = [min(result["populationGen"]["fitnessAvg"][i] + result["populationGen"]["fitnessStd"][i], 1) for i in range(len(populationGen))]
     return result
 
-if __name__ == "__main__":
+def multProcessesTest(seed:int, countTest:int, numQubits:int, maxDepth:int, minDepth:int, lenPopulation:int, countGenerations:int):
     from multiprocessing import Pool
-
-    def main(i):
-        classes = getGatesIntoModule(QuantumCircuit)
-        GATES_PARAMETERS = getGatesWithTypesParameters(classes)
-        GATES_PARAMETERS = getGatesWithCombinations(GATES_PARAMETERS)
-
-        print(f"---   TEST {i}   ---")
-        random.seed(i)
-        circuitTarget = createCircuit(4, 20, 20, GATES_PARAMETERS)
-        stateTarget = Statevector.from_instruction(circuitTarget.circuit)
-        populationInitial = initialPopulation(200, circuitTarget.n_qubits, circuitTarget.m_gates, 1, GATES_PARAMETERS)
-        for i, circuit in enumerate(populationInitial):
-            populationInitial[i] = applyFitnessIntoCircuit(circuit, stateTarget)
-        populationGen = generations(populationInitial, 10, circuitTarget.m_gates, stateTarget, GATES_PARAMETERS)
-        result = {
-            "target": {
-                "circuit": circuitTarget,
-                "stateVector": stateTarget
-            },
-            "populationInitial": {
-                "list": populationInitial,
-                "bestCircuit": max(populationInitial, key=lambda x: x.fitness),
-                "worseCircuit": min(populationInitial, key=lambda x: x.fitness)
-            },
-            "populationGen": {
-                "list": populationGen,
-                "bestCircuits": [max(population, key=lambda x: x.fitness) for population in populationGen],
-                "worseCircuits": [max(population, key=lambda x: x.fitness) for population in populationGen],
-                "fitnessAvg": [sum(x.fitness for x in population)/len(population) for population in populationGen],
-                "fitnessStd": [float(np.std(populationFitness, ddof=0)) for populationFitness in ([[x.fitness for x in geracao if x.fitness >= 0.3] for geracao in populationGen])]
-            }
-        }
-        result["populationGen"]["lowerBound"] = [max(result["populationGen"]["fitnessAvg"][i] - result["populationGen"]["fitnessStd"][i], 0) for i in range(len(populationGen))]
-        result["populationGen"]["upperBound"] = [min(result["populationGen"]["fitnessAvg"][i] + result["populationGen"]["fitnessStd"][i], 1) for i in range(len(populationGen))]
+    parameters = [[i, numQubits, maxDepth, minDepth, lenPopulation, countGenerations] for i in range(seed, seed+countTest)]
+    with Pool(countTest) as pool:
+        print("Iniciando todos")
+        inicio = time.time()
+        result = pool.starmap(main, parameters)  # Replace ... with your list of arguments
+        fim = time.time() - inicio
+        print(f"Fim de todos -- {fim}")
         return result
-    
-    pool = Pool()
-    with Pool() as pool:
-        result = pool.map(main, [1, 2])  # Replace ... with your list of arguments
-        print(result)
+
+if __name__ == "__main__":
+    results = multProcessesTest(seed=10, countTest=10, numQubits=4, maxDepth=20, minDepth=1, lenPopulation=200, countGenerations=1)
