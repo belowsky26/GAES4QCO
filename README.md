@@ -1,100 +1,238 @@
-# Slide 1
-Ciência da computação....
-Tema
-# Slide 2, 3 e 4
-Resumo sobre Computação quântica, os parâmetros de cada gate e a mudança no qubit
-# Slide 5
-Problemas existentes na computação quântica
-# Slide 6
-Problema escolhido e a aplicação da IA para se resolver
-Artigos encontrados
-# Slide 7 e 8
-Artigo escolhido e resumo de sua solução para o problema
-# Slide 9
-Diferencial que pode trazer maior acerto para a solução anterior
-# Slide 10
-Resultados do artigo e a meta atual
+# Relatório de Resultados do Algoritmo Genético
+## Ambiente Virtual
+Para garantir a reprodutibilidade dos resultados, utilize um ambiente virtual:
+```bash
+pip install -r requirements.txt
+```
+## Configuração do Algoritmo Genético
+### Componentes:
+- **Taxa de Cruzamento**: 80%
+- **Taxa de Mutação**: 8%
+- **Cromossomo**: Gates e Gates com EE aplicada
+    ```python
+    class Gate:
+        def __init__(self, name:str, affected_qubits:list[int], gateInfo:dict={}) -> None:
+            self.name =  name
+            self.affected_qubits = affected_qubits
+            self.parameters = gateInfo["combinations"][0]
+    ```
+    ```python
+    class StepSize:
+        def __init__(self) -> None:
+            self.mean = 0
+            self.variation = 0.5
+            self.history = []
+            self.c = 0.9
+        def resetVariation(self):
+            lenLimit = len(self.history) if len(self.history) < 5 else 5
+            success = sum(self.history[-lenLimit:])/lenLimit
+            if success > 1/5:
+                self.variation /= self.c
+            elif success < 1/5:
+                self.variation *= self.c
+        def addHit(self, hit:bool):
+            self.history.append(int(hit))
+            self.resetVariation()
+    ```
+- **Indivíduos**: Circuitos
+    ```python
+    class Circuit:
+        def __init__(self, n_qubits, m_gates) -> None:
+            self.n_qubits = n_qubits
+            self.m_gates = m_gates
+            self.gates = [[] for _ in range(m_gates)]
+            self.fitness = None
+            self.circuit = None
+        
+        def constructCircuit(self):
+            self.circuit = QuantumCircuit(self.n_qubits)
+            for gatesInDepth in self.gates:
+                for gate in gatesInDepth:
+                    parametersString = ""
+                    for type, h, *parameter in gate.parameters:
+                        parametersString += f"{parameter[0]}"
+                        if type == "float":
+                            parametersString += f"*{pi}"
+                        parametersString += ","
+                    parametersString = parametersString[:-1]
+                    exec(f"self.circuit.{gate.name}({parametersString})")
+    ```
+- **População**: 200
+    ```python
+    def initialPopulation(numPopulation:int, numQubits:int, maxDepth:int, minDepth:int, gatesParameters:dict):
+        gatesParametersLocal = deepcopy(gatesParameters)
+        population = []
+        for _ in range(numPopulation):
+            circuit = createCircuit(numQubits, maxDepth, minDepth, gatesParametersLocal)
+            population.append(circuit)
+        return population
+    ```
+- **Gerações**: 1000
+    ```python
+    def generations(population:list[Circuit], maxGeneration:int, maxDepth:int, svTarget:Statevector, gatesParameters:dict, nameFile:str):
+        populationLocal = deepcopy(population)
+        jsonToSave = {
+        "fitnessPopulationInitial": sorted([x.fitness for x in populationLocal]),
+        "fitnessPopulationGen": [],
+        "fitnessAvgPopulationGen":  [],
+        "fitnessStdPopulationGen":  [],
+        }
+        for gen in range(maxGeneration):
+            if gen % 50 == 0:
+                print(f"Generation {gen}")
+            populationSelected = selection(populationLocal, svTarget)
+            populationNextGen = crossover(populationSelected, gatesParameters)
+            populationSelected = None
+            populationNextGen = mutation(populationNextGen, svTarget, maxDepth, gatesParameters)
+            populationLocal = selection(populationLocal + populationNextGen, svTarget, survivor=True)
+            populationNextGen = None
+            jsonToSave["fitnessPopulationGen"].append(sorted([x.fitness for x in populationLocal]))
+            jsonToSave["fitnessAvgPopulationGen"].append(sum(jsonToSave["fitnessPopulationGen"][-1])/len(jsonToSave["fitnessPopulationGen"][-1]))
+            jsonToSave["fitnessStdPopulationGen"].append(np.std(jsonToSave["fitnessPopulationGen"][-1], ddof=0))
+        saveJson(jsonToSave, nameFile)
+        bestCircuit = max(populationLocal, key=lambda x: x.fitness)
+        jsonToSave = None
+        populationLocal = None
+        return bestCircuit
+    ```
+### Principais Funções do Algoritmo:
+- **Aptidão**: Recebe o Circuito solução e o Statevector alvo e retorna a fidelidade entre eles
+    ```python
+    def fidelityFitnessFunction(circuit:Circuit, svTarget:Statevector):
+        svTargetLocal = Statevector(svTarget)
+        svSolution = Statevector.from_instruction(circuit.circuit)
+        fidelity = state_fidelity(svSolution, svTargetLocal)
+        return max(0, fidelity)
+    ```
+- **Seleção de Indivíduos**: Recebe a população e seleciona pelo menos 1x melhor indivíduo e em seguida realiza torneio até preencher todas as vagas solicitadas (parenteSelection = 2xlen(population) e suvivorSelection = len(population))
+    ```python
+    def selection(population:list[Circuit], svTarget:Statevector, survivor:bool=False):
+        populationLocal = deepcopy(population)
+        for i, circuit in enumerate(populationLocal):
+            populationLocal[i] = applyFitnessIntoCircuit(circuit, svTarget)
+        champion = max(populationLocal, key=lambda circuit: circuit.fitness)
+        champions = []
+        champions.append(champion)
+        if not survivor:
+            lenNextGen = len(populationLocal)
+            for _ in range(1, lenNextGen):
+                group = random.sample(populationLocal, 2)
+                champion = max(group, key=lambda circuit: circuit.fitness)
+                champions.append(champion)
+        else:
+            lenNextGen = len(populationLocal)//2
+            for _ in range(1, lenNextGen):
+                group = random.sample(populationLocal, 2)
+                champion = max(group, key=lambda circuit: circuit.fitness)
+                champions.append(champion)
+                populationLocal.remove(champion)            
+        return champions
+    ```
+- **Cruzamento**: Recebe a população e as gates disponíveis e realiza um cruzamento entre pares de indivíduos. Cada par irá realizar cruzamento por múltiplos pontos, sempre respeitando a profundidade dos indivíduos.
+    ```python
+    def crossover(population:list[Circuit], gatesParameters:dict):
+        populationLocal = deepcopy(population)
+        gatesParametersLocal = deepcopy(gatesParameters)
+        random.shuffle(populationLocal)
+        populationNextGen = []
+        for i in range(0, len(populationLocal), 2):
+            circuit1 = populationLocal[i]
+            circuit2 = populationLocal[i+1]
+            if random.random()%100 < CROSSOVER:
+                circuitGates1 = []
+                circuitGates2 = []
+                minDepth = circuit1.m_gates if circuit1.m_gates <= circuit2.m_gates else circuit2.m_gates
+                points = random.choices([0, 1], k=minDepth)
+                if not points.count(1):
+                    points[random.randint(0, minDepth - 1)] = 1
+                elif not points.count(0):
+                    points[random.randint(0, minDepth - 1)] = 0
+                
+                for y in range(minDepth):
+                    if points[y] == 0:
+                        circuitGates1.append(list(circuit1.gates[y]))
+                        circuitGates2.append(list(circuit2.gates[y]))
+                    else:
+                        circuitGates1.append(list(circuit2.gates[y]))
+                        circuitGates2.append(list(circuit1.gates[y]))
+                if minDepth < circuit1.m_gates:
+                    circuitGates1 += list(circuit1.gates[minDepth:])
+                elif minDepth < circuit2.m_gates:
+                    circuitGates2 += list(circuit2.gates[minDepth:])
+                
+                nQubits = circuit1.n_qubits if circuit1.n_qubits >= circuit2.n_qubits else circuit2.n_qubits
+                circuit1 = Circuit(nQubits, circuit1.m_gates)
+                circuit1.gates = circuitGates1
+                circuit2 = Circuit(nQubits, circuit2.m_gates)
+                circuit2.gates = circuitGates2
+                # Substituir os qubits Livres por outras Gates
+                for circuitNextGen in [circuit1, circuit2]:
+                    for y, gateDepth in enumerate(circuitNextGen.gates):
+                        qubitsFree = list(range(0, circuit1.n_qubits))
+                        for gate in gateDepth:
+                            qubitsFree = list(set(qubitsFree).difference(gate.affected_qubits))
+                        while qubitsFree:
+                            gate, qubitsFree = createGateToListQubits(qubitsFree, gatesParametersLocal)
+                            circuitNextGen.gates[y].append(gate)
+            populationNextGen.append(circuit1)
+            populationNextGen.append(circuit2)
+        return populationNextGen
+    ```
+- **Mutação**: Verifica e aplica mutação a cada indivíduo respeitando os seus limites e suas particularidades (EE). Ex: Caso ele não tenha Gates de Controle a mutação *`mutationSwapControlQubit`* não irá participar do sorteio.
+    ```python
+    def mutation(population:list[Circuit], svTarget:Statevector, maxDepth:int, gatesParameters:dict):
+        populationLocal = deepcopy(population)
+        populationNextGen = []
+        for circuit in populationLocal:
+            if random.random()%100 < MUTATION:
+                mutations = [mutationSingleGateFlip, mutationNumberGates]
+                depthQubitList = [(y, x) for y, gatesDepth in enumerate(circuit.gates) for x, gate in enumerate(gatesDepth) if gate.name.count("c") and len(gate.affected_qubits) > 1]
+                if len(depthQubitList):
+                    mutations.append(mutationSwapControlQubit)
+                listGateParamFloat = [(y, x, p) for y, gatesDepth in enumerate(circuit.gates) for x, gate in enumerate(gatesDepth) for p, parameter in enumerate(gate.parameters) if parameter[0] == "float"]
+                if len(listGateParamFloat):
+                    mutations.append(mutationGateParameters)
+                if circuit.m_gates > 1:
+                    mutations.append(mutationSwapColumns)
+                mutationSelected = random.choice(mutations)
+                if mutationSelected == mutationGateParameters:
+                    circuit = mutationSelected(circuit, svTarget, listGateParamFloat)
+                elif mutationSelected == mutationNumberGates:
+                    circuit = mutationSelected(circuit, maxDepth, gatesParameters)
+                elif mutationSelected == mutationSwapControlQubit:
+                    circuit = mutationSelected(circuit, depthQubitList)
+                elif mutationSelected == mutationSingleGateFlip:
+                    circuit = mutationSelected(circuit, gatesParameters)
+                else:
+                    circuit = mutationSelected(circuit)
+                circuit.fitness = None
+                circuit.circuit = None
+            populationNextGen.append(circuit)
+        return populationNextGen
+    ```
+## Código Fonte e Experimentos
+- **Código principal**:**`main.py`** contém o código do algoritmo genético desenvolvido.
+- **Experimentos**: O notebook **`Seed100-109.ipynb`** pode ser utilizado para executar os testes.
+## Resultados
+### Melhor resultado
+O melhor resultado foi obtido com a semente 103, alcançando um valor de fitness de 99.23%.
+- **Comparação Visual**
 
+| Descrição | Imagem |
+|---|---|
+|Resultado obtido|<img src="files/Teste_103_Best_0.992305.png" alt="Resultado obtido com a semente 103">|
+|Circuito Alvo|<img src="files/Target_103.png" alt="Resultado esperado">|
+|Circuito otimizado|<img src="files/Best_103.png" alt="Circuito otimizado">|
 
+**Observação**: As imagens acima demonstram a qualidade da solução encontrada pelo algoritmo, que possui profundidade 7, em comparação com o circuito alvo com profundidade 20.
 
-# Abstract: 
-The design of quantum circuits is often still done manually, for instance by following certain patterns or rule of thumb. While this approach may work well for some problems, it can be a tedious task and present quite the challenge in other situations. Designing the architecture of a circuit for a simple classification problem may be relatively straight forward task, however, creating circuits for more complex problems or that are resilient to certain known problems (e.g. barren plateaus, trainability, etc.) is a different issue. Moreover, efficient state preparation or circuits with low depth are important for virtually most algorithms. In attempts to automate the process of designing circuits, different approaches have been suggested over the years, including genetic algorithms and reinforcement learning. We propose our GA4QCO framework that applies a genetic algorithm to automatically search for quantum circuits that exhibit user-defined properties. With our framework, the user specifies through a fitness function what type of circuit should be created, for instance circuits that prepare a specific target state while keeping depth at a minimum and maximizing fidelity. Our framework is designed in such a way that the user can easily integrate a custom designed fitness function. In this paper, we introduce our framework and run experiments to show the validity of the approach.
-# 1 - Introduction:
-While quantum computing has been gaining momentum in recent years, the capabilities of quantum computers of the current so-called Noisy-IntermediateScale-Quantum (NISQ) [15] era are still severely limited. That is, current quantum computers contain relatively few qubits that are error-prone, circuits are restricted to a low depth and algorithms are run without any error-correction. To overcome these limitations, hybrid algorithms, i.e., algorithms that partially run on classical and quantum computers, are often used instead of purely quantum algorithms [12, 18]. Putting aside whether NISQ-algorithms will produce the highly anticipated quantum advantage, other fundamental questions must also be addressed. For instance, how does one construct or design a quantum circuit for a specific task? What constitutes a good circuit? Why choose one ansatz over another? Quantum circuits are often hand-crafted, i.e., one manually comes up with a design of a particular circuit. This can for example be done by following standard practices. However, designing efficient and powerful circuits for NISQ-devices is a non-trivial task. Naturally the question arises whether this process can be automated, that is, could an algorithm design novel quantum circuits for a given task? This question, as we will see, is not new and different approaches in this regard have been investigated by the research community. In this paper, we introduce our GA4QCO framework, a framework that uses a genetic algorithm to design completely new circuits and to optimize existing ones. More importantly, our proposed framework allows its users to define a custom fitness function to automatically search for quantum circuits matching a user-defined criteria. We start by briefly discussing related work and different approaches that have been proposed for the task of searching for quantum circuits by the research community. In Section 3 we give a short recap of the fundamentals of genetic algorithms and quantum computing required to understand the core components of our proposed method. We introduce our framework in Section 4. We apply our framework to different settings relevant in the NISQ-era and discuss our experimental setup and results in Section 5. We give an outlook on future work in Section 6 and a conclusion in Section 7.
+### Média dos Resultado
+O resultado médio foi calculado a partir de 10 testes com sementes entre 100 e 109, aplicando o intervalo de confiança de 95%.
+- **Comparação Visual**
 
-# 2 - Related Work:
-The idea of automatically searching and designing quantum circuits has been around for a while, and a prominent approach in this area is to apply genetic algorithms. Williams and Gray use a genetic programming algorithm to design quantum circuits in [20]. In their approach, the algorithm is given a target unitary matrix and the goal is to find circuits whose unitary matrix is minimally different than the target. They apply their algorithm to the problem of creating circuits for quantum teleportation. Rubinstein proposes a genetic programming approach for evolving circuits that result in maximally entangled qubits in [17]. Lukac and Perkowski propose a genetic algorithm with the goal to evolve circuits that correspond to a specified target unitary matrix [11]. More recently, Ding and Spector proposed a genetic algorithm for quantum architecture search for parameterized quantum circuits in the domain of reinforcement learning [4] and Rattew et al. propose their evolutionary variational eigensolver in [16]. Zhang and Zhao propose an evolutionary algorithm for the task of circuit architecture search and apply it to classification [22]. Other algorithms and methods have also been proposed for this task. Du et al. introduced their quantum architecture search (QAS) algorithm in [5], which is an algorithm to automatically design quantum circuits with improved learning behavior for variational quantum algorithms. In [10] Lu et al. propose their Markovian quantum neuralevolution (MQNE) algorithm, which searches for quantum circuits in the context of quantum machine learning. Pirhooshyaran and Terlaky investigate the use of three different approaches, i.e., random search, reinforcement learning and Bayesian optimization to search for quantum circuits. In their approach, the trainability of the circuits is taken into account during the search [14]. Wu et al. introduced a compilation and circuit optimization framework named QGo in [21]. QGo can produce an optimized circuit for a target device. Chivilikhin et al. [3] propose a technique that, among other things, optimizes the topology of a quantum circuit for a hardware-efficient variational quantum eigensolver through the use of a multi-objective genetic algorithm. The genetic algorithm aims to minimize the number of CNOT gates in a circuit as well as the energy of the system. Kuo et al. employ deep reinforcement learning to find quantum circuits that generate a specified target state from an initial state [9].
+| Descrição | Imagem |
+|---|---|
+|Resultado Testes|<img src="files/Teste_Global_100-109.png" alt="Resultado médio">|
+|Resultado Alvo |<img src="files/Teste_Comparar.png" alt="Resultado Alvo">|
 
-# 3 - Background:
-In this section, we will briefly recap the fundamentals of genetic algorithms (GAs) and quantum computing (QC) that are required to understand the core concepts of our proposed framework, which we will introduce in Section 4. For more comprehensive introductions to GAs we refer to [7] and to QC to [13].
-
-## 3.1 - Genetic Algorithms:
-GAs are meta-heuristic optimization algorithms that incorporate many methods and concepts inspired by biological Darwinian evolution. That is, they are algorithms inspired by nature to tackle a wide range of problems that may appear in a plethora of domains. A GA is made of a number of building blocks and we will introduce the essential ones next.
-* **Individual**: A single solution is represented by an individual. An individual may consist of several properties, however, we can think of it as an representation or encoding of a single solution for the problem at hand.
-* **Population**: Every GA consists of a population, which contains a number of individuals. It can be thought of as a list of individuals.
-* **Crossover**: Throughout the evolutionary process new individuals (i.e. solutions) are created through the use of crossover operations. While there exist a variety of different crossover operations, their common purpose is to create a new individual, often referred to as the child, by combining the properties of two existing individuals, often referred to as the parents. This recombination does not always produce better individuals, however, through the evolutionary process, which is inspired by the idea of survival of the fittest, bad solutions and traits should be neglected and better solutions should ultimately be preferred and thrive.
-* **Mutation**: Random mutations are applied to individuals resulting in a slightly different solution. A mutation could for example be a simple bit-flip, however, more elaborate mutations may be applied.
-* **Generation**: A GA runs for a number of generations. In each generation, new solutions are created via crossover and mutation. At the end of each generation, some individuals are discarded while the rest survive and take part in the next generation.
-* **Selection**: Selection pressure is applied in two occasions. For one, there is the parent selection, i.e., the process of determining what individuals are allowed to take part in the crossover operations in a particular generation. Secondly, there is the survivor selection, i.e., the process of determining which individuals are going to be part of the next generation and which are discarded.
-* **Fitness**: Each individual has a fitness value, which determines how good a particular solution is. It drives the evolutionary process and allows the ranking of individuals.
-* **Evolutionary process**: A GA starts with a population of random individuals and then runs for a number of generations with the goal to find individuals with the highest fitness value. In each generation, new individuals (children) are created by applying crossover operations on existing individuals (parents). Mutations are applied randomly to newly created solutions. Individuals are ranked by fitness determined by a problem specific fitness function. At the end of each generation, weaker individuals are replaced by children thus creating the population for the next generation. This process repeats until the specified number of generations is reached. As randomness is part of the algorithm, convergence is not guaranteed, and each run may return different solutions.[7, 6]
-
-These are the basic building blocks of a GA and we will see how we construct our algorithm for the search for quantum circuits in Section 4. However, we will first introduce the basics of QC.
-
- ## 3.2 - Quantum Computing:
-Quantum computing is a concept in quantum information theory that utilizes quantum properties to gain an advantage over classical computing for some problems. Instead of working with classical bits, that can be either zero or one, quantum computers work with so called qubits. Qubits can be in a superposition of zero and one, which we will denote as |0> and |1>. A qubit state |φ> can be seen as an unit vector in a two dimensional complex Hilbert space with basis states |0> = [1 0] and |1> = [0 1] (which we will call the computational basis), such that:
-> |φ> = α0|0> + α1|1> = α0 [1 0] + α1 [0 1] (1)
-* Where `α0, α1 ∈ C` and correspond to the probabilities of collapsing to the states `|0>` or `|1>` respectively.
-* Note that `|α0|² + |α1|² = 1` holds.
-
-A system of multiple qubits can be described as a product space of the single qubit spaces. For example, if we have two qubits, a general state `|ϕ> ∈ H×H` can be described as `|ϕ> = α00|00i + α01|01> + α10 |10> + α11 |11>`, where now `|α00|²` is the probability that the first and second qubit is measured in the `|0>` state, `|α01|²` is the probability that the first state is measured in the `|1>` state and the second qubit in the `|0>` state and so on. A quantum computer can act via gates to map an initial quantum state to another state. Since quantum states are unit vectors in the `2n-dimensional Hilbert space H`, the gates must ensure that the resulting state is always a unit vector. That is the reason why gates of a quantum computer are always represented by unitary matrices. A matrix is unitary iff `U†U = UU† = I`, where `I` is the identity matrix. `U` has the property that it maps a unit vector `|ϕ> ∈ H` to another unit vector `U|ϕ> ∈ H`. In theory, any unitary matrix can be applied to the system, but in practice only local gates (gates that act on a subsystem of only a few qubits) are implemented on a quantum computer. This is due to the physical limitations (e.g. noise). Entanglement is another important aspect in QC. Loosely speaking, `two qubits are entangled if their states depend on each other`. For example, the `bell state |ϕ> = (1/√2)|00> + (1/√2)|11>` is an entangled state: If the first qubit is measured in the `|0>` state the second qubit also have to be in the `|0>` state and the same for the `|1>` state. Formally, `a two-qubit state |ϕ> ∈ H×H is in an entangled state if there are no ϕ1, ϕ2 ∈ H such that |ϕ> = |ϕ1> ⊗ |ϕ2>`. The existence of entangled states on a quantum computer is a fundamental difference to classical computers and a main reason why quantum computing can yield an advantage. Such an advantage have be proven for various quantum algorithms theoretically. For example, the `Grover algorithm` [8] for finding elements in an unsorted database is quadratically faster than any classical algorithm and `Shors algorithm` [19] for prime factorization leads even to an exponential speed up.
-
-# 4 - The GA4QCO-Framework:
-Our GA based framework optimizes quantum circuits while enforcing specific properties with respectto given constraints, e.g. searches for circuits with minimal depth while still achieving high fidelity. The framework is designed as a toolbox, allowing different components to be combined. Furthermore, custom, i.e., user-defined fitness functions are easily integrated, allowing users to apply the framework to awide range of problems and domains. The framework simulates the evolution process similar to the illustration in `[Figure 1]`. The user can control the main properties of the evolution via a `property file`, e.g. `number of individuals` in the population, `number of generations`, `probability of the mutation` and `crossover operations`, the `depth and width` of the circuits, `type of the fitness function` and others.
-
-## 4.1 - Components:
-1. **Individual Representation**: A population P consist of N individuals, which represent quantum circuits. Each individual `Ik`, `0 < k < N`,with `n` qubits and `m` gates per qubit is encoded as a two-dimensional list with n rows and m columns. Note that `n` and `m` correspond the circuit width and depth respectively. Each gate `gj` , `0 < j < m`, acting on the qubit `qi,0 < i < n`, has following characteristics:
-    * name chosen from a predefined gate set;
-    * qubit id to identify on which qubit the gate isapplied;
-    * affected qubits to represent multiple-qubit gates;
-    * rotation angles `θ` for parametrized gates,e.g. `RX(θ)`; if no constant value is set for the parameters, they are initialized randomly in therange `[−π; π]`;
-    * control and target qubits for controlled gates;
-
-2. **Fitness Functions**: The fitness function defines the objective of the optimization and assigns a scalar value to each solution/individual reflecting its quality with respect to the optimization goal. A fitness function can take multiple properties of the individual into account, for example the number of gates, the quantum state it produces or its behavior in a variational training setting. It is up to the researchers to define how the different properties shall be combined and weighted to calculate the fitness. We’ve implemented several example fitness functions using our proposed framework, and we describe a selection of these next.
-    * ***Fidelity fitness function***: The aim of the fidelity fitness function is to find a quantum circuit that maximizes the fidelity to a given target state. Additional constraints can be added to the fitness function in order to find circuits matching a specific criteria, e.g.depth can be included to prefer shallow circuits, the set of quantum gates used for individual generation can be restricted, or the noise model of a specific quantum hardware can be considered.
-    * ***Entanglement fitness function***: Using this fitness function, the algorithm seeks a state with maximum entanglement, i.e., a state equivalent to the Bell state for the two qubit case. Note that here the entanglement is measured with the `von Neumann entropy`.
-    * ***Machine learning fitness function (Classification/Regression)***: In this use case, training accuracy on a given dataset serves as fitness. Here, we distinguish between evolution process and learning from data points, which takes place with in the evolution process. As an individual learns from the dataset, parameters in parameterized gates are changed with the aim to increase training accuracy. After a certain number of learning steps, training accuracy isdetermined and stored as fitness value. Thus, using this fitness function, the user can discover a beneficial circuit ansatz for the given classification/regression problem.
-
-3. **Selection Methods**: The framework support sthree selection methods, each one can be used for the parent and survivor selection.
-    * ***Random selection***: Individuals are selected randomly from the population. Here, the fitness valueis not taken into account. This selection should be used when a high genetic diversity is required.
-    * ***Tournament selection***: Selects n individuals from the population. There fore, the algorithm creates `n` tournaments with a given number of individuals. In each tournament the individuals are compared with respect to their fitness. The winner of each tournament is then returned.
-    * ***Roulette wheel selection***: Returns a population according to the roulette wheel selection approach used in genetic algorithms. The selection of an individual is a random decision, where fitness of an individual increases the probability to get selected.
-
-4. **Crossover Methods**: We provide three crossover methods (see visualization on the `Figure 3`), differing in complexity and resulting diversity of the genetic information. All following crossover methods assume that the parent individuals can differ in their width and depth. Hence, the parent circuits will be padded with identity gates to meet the same size before applying the crossover logic. It is configurable whether the crossover returns all produced children or only one ofthem.
-    * ***Single-point crossover***: Is the simplest crossover method. It chooses at the column level a random point to split each parent at and recombines the four resulting parts into two children.
-    * ***Multi-point crossover***: Differs from the first method only in the number of splitting points (more than one). Due to more randomly selected splitting points, the recombination results in more diverse mix of the parental genetic information increasing the diversity and explorative capabilities of the whole evolution process. On the other hand, this method might destroy qubit sequences, which already perform well with respect to the optimization goal.
-    * ***Blockwise crossover***: Splits the parent circuits not only column-wise like the two methods before, but it chooses two-dimensional splitting points with row-wise and a column-wise dimension. While the first two crossover methods preserve all genetic information of the parents distributed across the two children, blockwise crossover will certainly destroy some multi-qubit gates due to its two-dimensional splitting. The algorithm will reconstruct broken multiqubit gates occurring in child-solutions. That way, one parental multi-qubit gate distributed (and such broken) on the two children will result in two valid multi-qubit gates in the children after reconstruction,i.e., the all-over genetic information of the parents was changed in summa. However, this behavior is not considered negative since the evolution process works with mutating genetic information.
-
-5. **Mutation Methods**: New individuals produced by a crossover operation are mutated with a specific probability. This mainstains genetic diversity and can result in children that are better than either parent wrt. the fitness function. Following mutations areprovided in our framework (see `Figure 4`):
-    * ***Single gate flip***: Randomly selects a gate and replaces it with a random gate. If the selected gate is a multi-qubit gate, all affected gates are replaced with a random gate as well.
-    * ***Swap control qubit***: Randomly searches for a controlled-gate and swaps control and target qubit.
-    * ***Mutate qubits***: Adjusts the number of qubits randomly by adding or removing a qubit. Mutate gates Adjusts the number of gates randomly by adding random gates or removing gates on each qubit.
-    * ***Swap columns***: Exchanges all gates from two randomly chosen columns of the circuit.
-    * ***Mutate gate parameters***: Randomly selects a parameterized gate and adjusts its parameter (if such agate is found).
-
-
-## 4.2 - Availability:
-We will be making our GA4QCO framework availableto the research community on GitHub1soon, including documentation and a number of tutorials. Allexperiments included in this paper are also available on GitHub. As described above, a core feature of theframework is its easy integration of custom fitnessfunctions, i.e., the functionality that allows users todefine their own fitness functions that will guide theevolution process to search for specific circuits. Thisallows the framework to be applied to a wide rangeof domains. We plan to adapt and extend the framework to integrate new features and fitness functions.
-
-# 5 Experiments:
-In this section, we show results of preliminary experiments from our framework to illustrate the validity of our approach. We performed experiments using the fidelity fitness function in 2 different ways: Maximizing fidelity without any additional constraints and maximizing fidelity using a restricted gate set. All experiments were implemented in Python 3 using Qiskit [1] and are available on the public GitHub repository, including the parameters used. For each experiment, we show the best fitness per generation, average fitness per generation as well as a random baseline. Note that the results are averaged over all experiments. The random baseline shows the best randomly created individual per generation, in each generation an equal amount of solutions is created as with the GA.
-
-1. **Fidelity**: Recall that the aim of the fidelity fitness function is to maximize the fidelity between a given target and the state prepared by a circuit created by the GA4QCO framework. For our experiments, we used Qiskit [1] to create random circuits whose statevectors serve as the target states. Each circuit has 4 qubits and a depth of 20. We created 10 such circuits randomly and ran the algorithm for each with the same parameters. The number of generations was set to 1000 and a population of 200 individuals was used. A full set of parameters used is available in the GitHub repository. The results are shown in Figure 5. The fitness (i.e. fidelity) continuously improves, approaching a fidelity of 0.8. Running the algorithm longer with a larger population may even yield better results.
-
-2. **Fidelity with the restricted gate set**: As in the previous case, the framework searches for a circuit that prepares a quantum state close to the specified target state. But this time, we restrict the gates that can be used in individuals. This experiment has a practical background, e.g. when the user knows the properties of the quantum computation device and aspire to use only the gates physically implemented on this device. In our experiment, we restrict gates to the following set: {’id’, ’rz’, ’sx’, ’x’, ’cx’} and run the evolution with the same parameters as in the first example. The results shown in Figure 5 demonstrate that even with the restricted gate set our framework is able to find a much better solution than a random guessing. The highest fitness of the best individuals returned after 1000 generations in 10 runs we observed was 0.994 from maximum 1.0 (in contrast to random baseline with the highest fitness 0.79), the lowest one was 0.67, which, nevertheless, is still significantly better than the average fitness of the random baseline (0.29). Figure 6 demonstrates the random circuit used to prepare target statevector and the best individual as well as target and output statevectors in comparison.
-
-# 6 - Outlook:
-The aim of the experiments from the previous section was, among other things, to show the validity of our approach, i.e., to demonstrate how GA can be applied to search for quantum circuits that satisfy some constraint or achieve some objective. These experiments could also be modified and extended. For instance, a further constraint for the fidelity fitness function could be the optimization under noise, i.e., inclusion of a noise model and noisy gates. Furthermore, the GAs used in our experiments ran for 1000 generations with a population of 200 individuals, increasing the number of generations or population size may improve the results even further. We limited the circuits to 4 qubits and a depth of 20. Investigating how the algorithm performs on larger circuits is a crucial question, especially in comparison to other approaches. Moreover, as the framework is designed as a toolbox, we plan to extend and improve it and also integrate more advanced fitness functions.
-
-# 7 - Conclusion:
-The design of quantum circuits is still mostly performed manually, a task which is often tedious and not intuitive. However, different approaches to automate this have been explored by the research community over the years, most notably applying genetic algorithms or reinforcement learning. In this paper, we proposed our GA4QCO framework, which uses a genetic algorithm to search, i.e., construct, the architecture of quantum circuits with specific characteristics. Our framework allows the easy integration of custom fitness functions, a feature allowing its users to apply the framework to a wide range of domains. We furthermore ran experiments on different problem settings to demonstrate the validity of our approach. We define target circuits and run the algorithm to search for circuits that maximize the fidelity between the constructed and target states. We also optimize the circuits using a restricted gate set. While our framework can be successfully applied to basic problems, we plan to further extend it and evaluate it on more advanced problems as there are still many open questions in the field of circuit construction.
+**Observação**: As imagens acima demonstram que ambos algoritmos possuem resultados próximos e com convergências parecidas. Entretanto, os resultados dos testes demonstram ter taxas superiores tanto no melhor fitness quanto no fitness médio,com ~94.9% em comparação a ~83% de melhor fitness e com ~72,5% em comparação a ~67% de fitness médio.
