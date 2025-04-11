@@ -1,0 +1,11 @@
+parallel:
+  default_processes: 4
+  max_processes: 8
+
+optimization:
+  max_iterations: 100
+  tolerance: 1e-6
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
