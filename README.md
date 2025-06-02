@@ -220,9 +220,9 @@ O melhor resultado foi obtido com a semente 103, alcançando um valor de fitness
 
 | Descrição | Imagem |
 |---|---|
-|Resultado obtido|<img src="files/Teste_103_Best_0.992305.png" alt="Resultado obtido com a semente 103">|
-|Circuito Alvo|<img src="files/Target_103.png" alt="Resultado esperado">|
-|Circuito otimizado|<img src="files/Best_103.png" alt="Circuito otimizado">|
+|Resultado obtido|<img src="Antigo/files/Teste_103_Best_0.992305.png" alt="Resultado obtido com a semente 103">|
+|Circuito Alvo|<img src="Antigo/files/Target_103.png" alt="Resultado esperado">|
+|Circuito otimizado|<img src="Antigo/files/Best_103.png" alt="Circuito otimizado">|
 
 **Observação**: As imagens acima demonstram a qualidade da solução encontrada pelo algoritmo, que possui profundidade 7, em comparação com o circuito alvo com profundidade 20.
 
@@ -232,7 +232,7 @@ O resultado médio foi calculado a partir de 10 testes com sementes entre 100 e 
 
 | Descrição | Imagem |
 |---|---|
-|Resultado Testes|<img src="files/Teste_Global_100-109.png" alt="Resultado médio">|
-|Resultado Alvo |<img src="files/Teste_Comparar.png" alt="Resultado Alvo">|
+|Resultado Testes|<img src="Antigo/files/Teste_Global_100-109.png" alt="Resultado médio">|
+|Resultado Alvo |<img src="Antigo/files/Teste_Comparar.png" alt="Resultado Alvo">|
 
 **Observação**: As imagens acima demonstram que ambos algoritmos possuem resultados próximos e com convergências parecidas. Entretanto, os resultados dos testes demonstram ter taxas superiores tanto no melhor fitness quanto no fitness médio,com ~94.9% em comparação a ~83% de melhor fitness e com ~72,5% em comparação a ~67% de fitness médio.
