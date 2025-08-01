@@ -1,11 +1,14 @@
 import random
 from typing import Iterator
+from uuid import UUID
 
-from GAES4QCO_1.src.GAES4QCO.domain.models.gate_component import GateComponent
+from .gate_component import GateComponent
+from ..shared.identity import ColumnComponentId
 
 
-class ColumnComponent:
-    def __init__(self, gates: list[GateComponent] = None ):
+class ColumnComponent(ColumnComponentId):
+    def __init__(self, gates: list[GateComponent] = None, _id: UUID = None ):
+        super().__init__(_id)
         self.gates = gates if gates is not None else []
 
     def add_gate(self, gate: GateComponent):

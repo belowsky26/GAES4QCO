@@ -1,18 +1,14 @@
 import uuid
 from typing import Any
 
-
-# --- 1. A Classe Base Genérica ---
-# Ela contém toda a lógica comum para qualquer ID de agregado.
+# --- 1. A Classe Base Genérica (sem alterações) ---
 class AggregateId:
     """
-    Classe base para todos os identificadores de Agregado.
+    Classe base para todos os identificadores de Agregado e Entidade.
     Usa UUIDs para garantir unicidade. É um Objeto de Valor imutável.
     """
     def __init__(self, value: uuid.UUID = None):
-        # Se nenhum valor for fornecido, gera um novo UUID único.
-        # Isso facilita a criação de novas entidades.
-        self._value = value if value else uuid.uuid4()
+        self._value = value or uuid.uuid4()
 
     @property
     def value(self) -> uuid.UUID:
@@ -22,7 +18,7 @@ class AggregateId:
     def __eq__(self, other: Any) -> bool:
         """Dois IDs são iguais se forem da mesma classe e tiverem o mesmo valor UUID."""
         if not isinstance(other, self.__class__):
-            return False
+            return NotImplemented
         return self._value == other._value
 
     def __hash__(self) -> int:
@@ -39,28 +35,24 @@ class AggregateId:
 
 
 # --- 2. As Classes Específicas de ID ---
-# Elas herdam toda a funcionalidade e servem apenas para dar um tipo distinto a cada ID.
 
 class CircuitId(AggregateId):
+    """Identificador único para um Agregado Circuit."""
     pass
-
-
-class GateComponentId(AggregateId):
-    pass
-
-
-class ColumnComponentId(AggregateId):
-    pass
-
 
 class GenerationId(AggregateId):
+    """Identificador único para um Agregado Generation."""
     pass
 
+class ColumnComponentId(AggregateId):
+    """Identificador único para uma Entidade ColumnComponent."""
+    pass
 
+class GateComponentId(AggregateId):
+    """Identificador único para uma Entidade GateComponent."""
+    pass
+
+# --- NOVA CLASSE ADICIONADA ---
 class StepSizeId(AggregateId):
+    """Identificador único para uma Entidade StepSize."""
     pass
-
-
-# E qualquer outro ID que você precisar...
-# class PopulationId(AggregateId): # Se População fosse um agregado
-#     pass

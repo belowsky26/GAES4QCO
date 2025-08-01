@@ -1,15 +1,20 @@
+from collections import deque
+from uuid import UUID
 
-class StepSize:
-    def __init__(self, variation: float = 0.5, c: float = 0.9, history_len: int = 5):
+from ..shared.identity import StepSizeId
+
+
+class StepSize(StepSizeId):
+    def __init__(self, variation: float, c: float, history_len: int, _id: UUID = None):
+        super().__init__(_id)
         self.mean = 0
         self.variation = variation
         self.c = c
-        self.history = []
+        self.history = deque(maxlen=history_len)
         self.history_len = history_len
 
     def __reset_variation(self):
-        len_limit = len(self.history) if len(self.history) < self.history_len else self.history_len
-        success = sum(self.history[-len_limit:])/len_limit
+        success = sum(self.history)/len(self.history)
         if success > 1/self.history_len:
             self.variation /= self.c
         elif success < 1/self.history_len:
