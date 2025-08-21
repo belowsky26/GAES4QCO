@@ -18,3 +18,12 @@ class StepSize:
         return (self.variation == other.variation and
                 self.c == other.c and
                 self.history_len == other.history_len)
+
+    def to_dict(self):
+        return {
+            "variation": self.variation,
+            "c": self.c,
+            "history_len": self.history_len,
+            "history": self.history,
+            "mean": self.mean,
+        }

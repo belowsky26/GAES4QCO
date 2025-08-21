@@ -15,3 +15,9 @@ class Column:
 
     def get_gates(self) -> Iterator[Gate]:
         yield from self.gates
+
+    def to_dict(self) -> dict:
+        """Converte o objeto Column e seus Gates para um dicionário serializável."""
+        return {
+            "gates": [gate.to_dict() for gate in self.gates]
+        }

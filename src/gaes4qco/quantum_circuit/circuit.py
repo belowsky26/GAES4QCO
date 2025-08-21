@@ -53,3 +53,12 @@ class Circuit:
 
         self._structural_representation = set(sorted(list(representation)))
         return self._structural_representation
+
+    def to_dict(self) -> dict:
+        """Converte o objeto Circuit e seus componentes para um dicionário serializável."""
+        return {
+            "count_qubits": self.count_qubits,
+            "depth": self.depth,
+            "fitness": self.fitness,
+            "columns": [col.to_dict() for col in self.columns]
+        }

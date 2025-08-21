@@ -1,4 +1,6 @@
 import random
+import json
+from pathlib import Path
 
 import numpy as np
 from qiskit.quantum_info import Statevector
@@ -6,13 +8,29 @@ from qiskit.quantum_info import Statevector
 from containers import AppContainer
 from experiment.config import ExperimentConfig
 from experiment.parallel_manager import ParallelExperimentManager
+from quantum_circuit.circuit import Circuit
+from quantum_circuit.interfaces import IQuantumCircuitAdapter
+
+PROJECT_PATH = Path(__file__).parents[2]
 
 
-def create_random_target_statevector(num_qubits: int, depth: int) -> Statevector:
+def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, filepath_base: str):
+    """Salva a estrutura de um circuito em .json e sua representação em .txt."""
+    print(f"Salvando detalhes do circuito em '{filepath_base}.json/.txt'...")
+    with open(f"{filepath_base}.json", 'w') as f:
+        json.dump(circuit.to_dict(), f, indent=4)
+    qiskit_circuit = adapter.from_domain(circuit)
+    with open(f"{filepath_base}.txt", 'w', encoding='utf-8') as f:
+        f.write(str(qiskit_circuit.draw('text')))
+
+
+def create_random_target_statevector(num_qubits: int, depth: int, seed: int) -> Statevector:
     """
     Usa nossas factories para gerar um circuito aleatório e retornar seu statevector.
     """
     print("Gerando circuito alvo aleatório...")
+    random.seed(seed)
+    np.random.seed(seed)
     # Usa um container temporário apenas para essa tarefa
     container = AppContainer()
     circuit_factory = container.circuit_factory()
@@ -24,6 +42,7 @@ def create_random_target_statevector(num_qubits: int, depth: int) -> Statevector
         max_depth=depth,
         min_depth=depth  # Profundidade fixa para o alvo
     )
+    save_circuit_details(domain_circuit, adapter, str(PROJECT_PATH / f"results/target_circuits/circuit_seed_{seed}"))
 
     # Converte para Qiskit e calcula o statevector
     qiskit_circuit = adapter.from_domain(domain_circuit)
@@ -40,9 +59,7 @@ def main():
     # 2. Criação do Circuito Alvo Aleatório (feito uma vez)
     targets_sv_data = []
     for i in range(10000, 10000+NUM_EXPERIMENTS):
-        random.seed(i)
-        np.random.seed(i)
-        target_statevector = create_random_target_statevector(num_qubits=NUM_QUBITS, depth=20)
+        target_statevector = create_random_target_statevector(num_qubits=NUM_QUBITS, depth=20, seed=i)
         # Extrai os dados para passar para os processos de forma segura
         target_sv_data = target_statevector.data.tolist()
         targets_sv_data.append(target_sv_data)
@@ -57,9 +74,9 @@ def main():
             min_depth=2,
             elitism_size=5,
             population_size=200,
-            max_generations=1000,
+            max_generations=100,
             target_statevector_data=targets_sv_data.pop()
-        ) for s in range(777, 777 + NUM_EXPERIMENTS)  # <-- Exemplo: rodando 10 experimentos com seeds de 0 a 9
+        ) for s in range(1001, 1001 + NUM_EXPERIMENTS)  # <-- Exemplo: rodando 10 experimentos com seeds de 0 a 9
     ]
 
     # 2. Cria o gerenciador de experimentos

@@ -34,3 +34,14 @@ class Gate:
                 self.steps_sizes == other.steps_sizes and
                 self.extra_controls == other.extra_controls and
                 self.is_inverse == other.is_inverse)
+
+    def to_dict(self) -> dict:
+        """Converte o objeto Gate para um dicionário serializável."""
+        return {
+            "gate_class_name": self.gate_class.__name__,
+            "qubits": self.qubits,
+            "parameters": self.parameters,
+            "step_sizes": [ss.to_dict() for ss in self.steps_sizes],
+            "extra_controls": self.extra_controls,
+            "is_inverse": self.is_inverse,
+        }

@@ -1,12 +1,25 @@
 import numpy as np
 import random
 import time
+import json
 
 from dependency_injector import providers
 from qiskit.quantum_info import Statevector
 
 from containers import AppContainer
+from quantum_circuit.circuit import Circuit
+from quantum_circuit.interfaces import IQuantumCircuitAdapter
 from .config import ExperimentConfig
+
+
+def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, filepath_base: str):
+    """Salva a estrutura de um circuito em .json e sua representação em .txt."""
+    print(f"Salvando detalhes do circuito em '{filepath_base}.json/.txt'...")
+    with open(f"{filepath_base}.json", 'w', encoding='utf-8') as f:
+        json.dump(circuit.to_dict(), f, indent=4)
+    qiskit_circuit = adapter.from_domain(circuit)
+    with open(f"{filepath_base}.txt", 'w', encoding='utf-8') as f:
+        f.write(str(qiskit_circuit.draw('text')))
 
 
 class ExperimentRunner:
@@ -69,6 +82,10 @@ class ExperimentRunner:
             initial_population=initial_pop,
             max_generations=self.config.max_generations
         )
+
+        adapter = self.container.qiskit_adapter()
+        output_base_path = self.config.results_filename.replace('.json', '')
+        save_circuit_details(best_circuit, adapter, f"{output_base_path}_best_circuit")
 
         end_time = time.time()
         duration = end_time - start_time
