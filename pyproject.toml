@@ -17,6 +17,7 @@ dev = [
     "qiskit-ibm-runtime",
     "pytest",  # É uma boa prática incluir outras ferramentas de dev aqui
     "black",   # Exemplo: formatador de código
+    "matplotlib"
 ]
 
 [tool.setuptools]
