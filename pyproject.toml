@@ -1,13 +1,23 @@
 [project]
-name = "GAES4QCO"
+name = "gaes4qco"
 version = "0.1.0"
 description = "Pacote para otimização de Circuitos Quânticos"
 authors = []
 dependencies = [
+    "qiskit",
+    "numpy",
+    "dependency-injector"
 ]
 readme = "README.md"
 requires-python = ">=3.9 "
 license = { text = "MIT" }
+
+[project.optional-dependencies]
+dev = [
+    "qiskit-ibm-runtime",
+    "pytest",  # É uma boa prática incluir outras ferramentas de dev aqui
+    "black",   # Exemplo: formatador de código
+]
 
 [tool.setuptools]
 include-package-data = true
