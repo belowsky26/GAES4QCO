@@ -3,7 +3,7 @@ from typing import List
 from copy import deepcopy
 from .interfaces import ICrossoverStrategy
 from .population import Population
-from ..quantum_circuit.circuit import Circuit, Column
+from quantum_circuit.circuit import Circuit, Column
 
 
 class UniformCrossover(ICrossoverStrategy):

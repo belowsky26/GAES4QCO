@@ -2,14 +2,14 @@ from dependency_injector import containers, providers
 from qiskit.quantum_info import Statevector
 
 # Importamos nossas classes de implementação de todas as features
-from .quantum_circuit import qiskit_adapter, circuit_factory, gate_factory
-from .evolutionary_algorithm import (
+from quantum_circuit import qiskit_adapter, circuit_factory, gate_factory
+from evolutionary_algorithm import (
     selection,
     crossover,
     mutation,
     population_factory
 )
-from .optimization import fitness, observer, optimizer
+from optimization import fitness, observer, optimizer
 
 
 class AppContainer(containers.DeclarativeContainer):
@@ -41,7 +41,8 @@ class AppContainer(containers.DeclarativeContainer):
         circuit_factory.CircuitFactory,
         # A injeção de dependência acontece aqui! O container sabe que
         # CircuitFactory precisa de uma GateFactory.
-        gate_factory=gate_factory
+        gate_factory=gate_factory,
+        use_evolutionary_strategy=config.evolution.stepsize
     )
 
     population_factory = providers.Factory(
@@ -94,12 +95,14 @@ class AppContainer(containers.DeclarativeContainer):
         providers.Factory(mutation.SwapColumnsMutation),
         providers.Factory(
             mutation.SingleGateFlipMutation,
-            gate_factory=gate_factory
+            gate_factory=gate_factory,
+            use_evolutionary_strategy=config.evolution.stepsize
         ),
         providers.Factory(
             mutation.ChangeDepthMutation,
             max_depth=config.evolution.max_depth,
-            gate_factory=gate_factory
+            gate_factory=gate_factory,
+            use_evolutionary_strategy=config.evolution.stepsize,
         ),
         providers.Factory(
             mutation.GateParameterMutation,

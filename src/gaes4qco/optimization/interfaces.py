@@ -1,8 +1,8 @@
 # optimization/interfaces.py
 
 from abc import ABC, abstractmethod
-from ..quantum_circuit.circuit import Circuit
-from ..evolutionary_algorithm.population import Population
+from quantum_circuit.circuit import Circuit
+from evolutionary_algorithm.population import Population
 
 
 class IFitnessEvaluator(ABC):

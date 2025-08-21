@@ -11,9 +11,10 @@ class CircuitFactory:
     delegando a criação de gates para a GateFactory.
     """
 
-    def __init__(self, gate_factory: GateFactory):
+    def __init__(self, gate_factory: GateFactory, use_evolutionary_strategy: bool):
         # A CircuitFactory agora tem uma instância da GateFactory.
         self._gate_factory = gate_factory
+        self.use_evolutionary_strategy = use_evolutionary_strategy
 
     def create_random_circuit(self, num_qubits: int, max_depth: int, min_depth: int) -> Circuit:
         depth = random.randint(min_depth, max_depth)
@@ -27,7 +28,7 @@ class CircuitFactory:
             while qubits_free_in_column:
                 try:
                     # Delega a criação do gate para a GateFactory
-                    new_gate = self._gate_factory.build_gate(qubits_free_in_column)
+                    new_gate = self._gate_factory.build_gate(qubits_free_in_column, self.use_evolutionary_strategy)
                     gates_in_column.append(new_gate)
 
                     # Remove os qubits usados da lista de disponíveis na coluna

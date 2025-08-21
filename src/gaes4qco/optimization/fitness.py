@@ -2,8 +2,8 @@
 
 from qiskit.quantum_info import Statevector, state_fidelity
 from .interfaces import IFitnessEvaluator
-from ..quantum_circuit.circuit import Circuit
-from ..quantum_circuit.interfaces import IQuantumCircuitAdapter
+from quantum_circuit.circuit import Circuit
+from quantum_circuit.interfaces import IQuantumCircuitAdapter
 
 
 class FidelityFitnessEvaluator(IFitnessEvaluator):

@@ -13,7 +13,7 @@ from qiskit.circuit.library.standard_gates import (
 
 # Imports atualizados para a nova arquitetura
 from .gate import Gate
-from ..shared.value_objects import StepSize
+from shared.value_objects import StepSize
 
 
 class GateFactory:
@@ -34,7 +34,7 @@ class GateFactory:
     _inverses_class = [SGate, SXGate, TGate, DCXGate]
     _gate_without_control = [IGate]
 
-    def build_gate(self, available_qubits: List[int], use_evolutionary_strategy: bool = True) -> Gate:
+    def build_gate(self, available_qubits: List[int], use_evolutionary_strategy: bool) -> Gate:
         """
         Método principal para construir uma instância da nossa entidade Gate.
         """

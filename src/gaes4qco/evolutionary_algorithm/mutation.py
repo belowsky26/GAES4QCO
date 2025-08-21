@@ -4,9 +4,9 @@ from typing import List
 from copy import deepcopy
 from .interfaces import IMutationStrategy
 from .population import Population
-from ..quantum_circuit.circuit import Circuit, Column
-from ..quantum_circuit.gate_factory import GateFactory
-from ..optimization.interfaces import IFitnessEvaluator
+from quantum_circuit.circuit import Circuit, Column
+from quantum_circuit.gate_factory import GateFactory
+from optimization.interfaces import IFitnessEvaluator
 
 
 # --- Classe Composta para aplicar mutações aleatórias ---
@@ -57,8 +57,9 @@ class SwapColumnsMutation(BaseMutationStrategy):
 
 
 class SingleGateFlipMutation(BaseMutationStrategy):
-    def __init__(self, gate_factory: GateFactory):
+    def __init__(self, gate_factory: GateFactory, use_evolutionary_strategy: bool):
         self._gate_factory = gate_factory
+        self.use_evolutionary_strategy = use_evolutionary_strategy
 
     def can_apply(self, circuit: Circuit) -> bool:
         return any(col.gates for col in circuit.columns)
@@ -68,7 +69,7 @@ class SingleGateFlipMutation(BaseMutationStrategy):
         col_idx, target_col = random.choice(non_empty_cols)
         gate_idx_to_remove = random.randrange(len(target_col.gates))
         removed_gate = target_col.gates.pop(gate_idx_to_remove)
-        new_gate = self._gate_factory.build_gate(available_qubits=removed_gate.qubits)
+        new_gate = self._gate_factory.build_gate(available_qubits=removed_gate.qubits, use_evolutionary_strategy=self.use_evolutionary_strategy)
         target_col.add_gate(new_gate)
         return circuit
 
@@ -82,9 +83,10 @@ class ChangeDepthMutation(BaseMutationStrategy):
     ## Altera a profundidade do circuito, adicionando ou removendo colunas.
     """
 
-    def __init__(self, max_depth: int, gate_factory: GateFactory):
+    def __init__(self, max_depth: int, gate_factory: GateFactory, use_evolutionary_strategy: bool):
         self.max_depth = max_depth
         self._gate_factory = gate_factory
+        self.use_evolutionary_strategy = use_evolutionary_strategy
 
     def mutate_individual(self, circuit: Circuit) -> Circuit:
 
@@ -112,7 +114,7 @@ class ChangeDepthMutation(BaseMutationStrategy):
                 qubits_free = list(range(circuit.count_qubits))
                 while qubits_free:
                     try:
-                        new_gate = self._gate_factory.build_gate(qubits_free)
+                        new_gate = self._gate_factory.build_gate(qubits_free, self.use_evolutionary_strategy)
                         new_column.add_gate(new_gate)
                         for q in new_gate.qubits:
                             qubits_free.remove(q)

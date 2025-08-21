@@ -2,7 +2,7 @@ import random
 from typing import List
 from .interfaces import ISelectionStrategy
 from .population import Population
-from ..quantum_circuit.circuit import Circuit
+from quantum_circuit.circuit import Circuit
 
 
 class TournamentSelection(ISelectionStrategy):

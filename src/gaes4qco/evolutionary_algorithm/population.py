@@ -1,6 +1,6 @@
 from itertools import combinations
 from typing import List, Iterator
-from ..quantum_circuit.circuit import Circuit
+from quantum_circuit.circuit import Circuit
 
 
 class Population:

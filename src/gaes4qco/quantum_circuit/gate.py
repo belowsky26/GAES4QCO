@@ -1,6 +1,6 @@
 from typing import Optional, List, Type
 from qiskit.circuit import Gate as QiskitGate  # ## Renomeado para evitar conflito
-from ..shared.value_objects import StepSize
+from shared.value_objects import StepSize
 
 
 class Gate:

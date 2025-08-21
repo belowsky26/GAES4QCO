@@ -1,9 +1,9 @@
-from ..evolutionary_algorithm.population_factory import PopulationFactory
-from ..quantum_circuit.circuit import Circuit
-from ..evolutionary_algorithm.interfaces import (
+from evolutionary_algorithm.population_factory import PopulationFactory
+from quantum_circuit.circuit import Circuit
+from evolutionary_algorithm.interfaces import (
     ISelectionStrategy, ICrossoverStrategy, IMutationStrategy
 )
-from ..evolutionary_algorithm.population import Population
+from evolutionary_algorithm.population import Population
 from .interfaces import IFitnessEvaluator, IProgressObserver
 
 

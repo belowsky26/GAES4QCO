@@ -1,11 +1,15 @@
 from dataclasses import dataclass, field
 from typing import List, Any
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parents[3]
 
 
 @dataclass
 class ExperimentConfig:
     """Encapsula todos os parâmetros para uma única execução do GA."""
     seed: int
+    stepsize: bool
     num_qubits: int
     max_depth: int
     min_depth: int
@@ -20,8 +24,6 @@ class ExperimentConfig:
     injection_rate: float = 0.9  # Injeta 80% quando ativado
     # O nome do arquivo de resultados é derivado da semente
     results_filename: str = field(init=False)
-    # O statevector alvo é criado a partir de um label
-    target_statevector_label: str = '1'  # Exemplo padrão
 
     def __post_init__(self):
-        self.results_filename = f"results_seed_{self.seed}.json"
+        self.results_filename = str(PROJECT_ROOT / "results" / f"{'stepsize' if self.stepsize else 'normal'}" / f"results_seed_{self.seed}.json")

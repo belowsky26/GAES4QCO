@@ -1,5 +1,5 @@
 from .population import Population
-from ..quantum_circuit.circuit_factory import CircuitFactory
+from quantum_circuit.circuit_factory import CircuitFactory
 
 
 class PopulationFactory:

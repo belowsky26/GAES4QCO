@@ -5,7 +5,7 @@ import time
 from dependency_injector import providers
 from qiskit.quantum_info import Statevector
 
-from ..containers import AppContainer
+from containers import AppContainer
 from .config import ExperimentConfig
 
 
@@ -46,6 +46,7 @@ class ExperimentRunner:
                 "max_depth": self.config.max_depth,
                 "diversity_threshold": self.config.diversity_threshold,
                 "injection_rate": self.config.injection_rate,
+                "stepsize": self.config.stepsize,
             },
             "observer": {
                 "filename": self.config.results_filename

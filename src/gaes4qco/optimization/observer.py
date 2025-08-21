@@ -3,7 +3,7 @@
 import json
 import numpy as np
 from .interfaces import IProgressObserver
-from ..evolutionary_algorithm.population import Population
+from evolutionary_algorithm.population import Population
 
 
 class JsonProgressObserver(IProgressObserver):

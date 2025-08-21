@@ -3,9 +3,9 @@ import random
 import numpy as np
 from qiskit.quantum_info import Statevector
 
-from gaes4qco.containers import AppContainer
-from gaes4qco.experiment.config import ExperimentConfig
-from gaes4qco.experiment.parallel_manager import ParallelExperimentManager
+from containers import AppContainer
+from experiment.config import ExperimentConfig
+from experiment.parallel_manager import ParallelExperimentManager
 
 
 def create_random_target_statevector(num_qubits: int, depth: int) -> Statevector:
@@ -35,7 +35,7 @@ def create_random_target_statevector(num_qubits: int, depth: int) -> Statevector
 def main():
     # 1. Parâmetros Gerais do Lote de Experimentos
     NUM_QUBITS = 4
-    NUM_EXPERIMENTS = 1  # Quantidade de execuções com seeds diferentes
+    NUM_EXPERIMENTS = 10  # Quantidade de execuções com seeds diferentes
 
     # 2. Criação do Circuito Alvo Aleatório (feito uma vez)
     targets_sv_data = []
@@ -51,14 +51,15 @@ def main():
     experiment_configs = [
         ExperimentConfig(
             seed=s,
+            stepsize=True,
             num_qubits=NUM_QUBITS,
             max_depth=15,
             min_depth=2,
             elitism_size=5,
             population_size=200,
-            max_generations=50,
+            max_generations=1000,
             target_statevector_data=targets_sv_data.pop()
-        ) for s in range(NUM_EXPERIMENTS)  # <-- Exemplo: rodando 10 experimentos com seeds de 0 a 9
+        ) for s in range(777, 777 + NUM_EXPERIMENTS)  # <-- Exemplo: rodando 10 experimentos com seeds de 0 a 9
     ]
 
     # 2. Cria o gerenciador de experimentos
