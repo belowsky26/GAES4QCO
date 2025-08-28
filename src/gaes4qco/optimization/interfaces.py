@@ -1,6 +1,6 @@
-# optimization/interfaces.py
-
 from abc import ABC, abstractmethod
+from typing import Tuple
+
 from quantum_circuit.circuit import Circuit
 from evolutionary_algorithm.population import Population
 
@@ -9,7 +9,7 @@ class IFitnessEvaluator(ABC):
     """Interface para qualquer classe que calcula o fitness de um circuito."""
 
     @abstractmethod
-    def evaluate(self, circuit: Circuit) -> float:
+    def evaluate(self, circuit: Circuit) -> Tuple[float, float]:
         """Calcula e retorna o valor de fitness de um único circuito."""
         pass
 

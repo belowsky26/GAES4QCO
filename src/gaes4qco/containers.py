@@ -114,16 +114,26 @@ class AppContainer(containers.DeclarativeContainer):
         ),
         providers.Factory(
             mutation.GateParameterMutation,
-            fitness_evaluator=fitness_evaluator
+            # fitness_evaluator=fitness_evaluator,
+            fitness_evaluator=weighted_fidelity_evaluator,
         ),
         providers.Factory(mutation.SwapControlTargetMutation)
     )
 
-    mutation_strategy = providers.Factory(
+    random_mutation = providers.Factory(
         mutation.RandomMutation,
         mutation_strategies=mutation_pool,
         mutation_rate=config.evolution.mutation_rate
     )
+
+    bandit_mutation = providers.Factory(
+        mutation.BanditMutationSelector,
+        mutation_strategies=mutation_pool,
+        mutation_rate=config.evolution.mutation_rate,
+        # fitness_evaluator=fitness_evaluator  # O seletor MAB precisa do avaliador
+        fitness_evaluator=weighted_fidelity_evaluator,  # O seletor MAB precisa do avaliador
+    )
+
     # --- Adaptadores de Taxa de Mutação e Crossover ---
     fixed_rate_adapter = providers.Factory(
         rate_adapter.FixedRateAdapter,
@@ -153,7 +163,8 @@ class AppContainer(containers.DeclarativeContainer):
         parent_selection=parent_selector,
         survivor_selection=survivor_selector,
         crossover=crossover_strategy,
-        mutation=mutation_strategy,
+        # mutation=random_mutation,
+        mutation=bandit_mutation,
         population_factory=population_factory,
         # rate_adapter=fixed_rate_adapter,
         rate_adapter=adaptive_rate_adapter,

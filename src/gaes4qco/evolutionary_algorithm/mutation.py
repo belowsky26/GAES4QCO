@@ -1,6 +1,6 @@
 import random
 import math
-from typing import List
+from typing import List, Dict
 from copy import deepcopy
 from .interfaces import IMutationStrategy
 from .population import Population
@@ -29,6 +29,74 @@ class RandomMutation(IMutationStrategy):
                     mutated_individuals.append(individual_copy)
             else:
                 mutated_individuals.append(individual_copy)
+        return Population(mutated_individuals)
+
+
+# --- SELETOR ADAPTATIVO (MAB-UCB) ---
+class BanditMutationSelector(IMutationStrategy):
+    """
+    Seleciona um operador de mutação usando um algoritmo Multi-Armed Bandit (UCB1)
+    para aprender dinamicamente qual operador é mais eficaz.
+    """
+
+    def __init__(self, mutation_strategies: List['BaseMutationStrategy'], mutation_rate: float,
+                 fitness_evaluator: IFitnessEvaluator):
+        self._strategies = mutation_strategies
+        self.mutation_rate = mutation_rate
+        self._fitness_evaluator = fitness_evaluator  # Necessário para mutações sem avaliação interna
+
+        # Estruturas de dados para o MAB
+        self._rewards = {s.__class__.__name__: 0.0 for s in self._strategies}
+        self._counts = {s.__class__.__name__: 0 for s in self._strategies}
+        self._total_applications = 0
+
+    def _select_strategy(self) -> 'BaseMutationStrategy':
+        """Seleciona a melhor estratégia usando a fórmula UCB1."""
+        # Garante que cada estratégia seja usada pelo menos uma vez
+        for i, s in enumerate(self._strategies):
+            if self._counts[s.__class__.__name__] == 0:
+                return self._strategies[i]
+
+        # Calcula a pontuação UCB1 para cada estratégia
+        ucb_scores = {}
+        for s in self._strategies:
+            name = s.__class__.__name__
+            avg_reward = self._rewards[name] / self._counts[name]
+            exploration_term = math.sqrt((2 * math.log(self._total_applications)) / self._counts[name])
+            ucb_scores[name] = avg_reward + exploration_term
+
+        best_strategy_name = max(ucb_scores, key=ucb_scores.get)
+
+        for s in self._strategies:
+            if s.__class__.__name__ == best_strategy_name:
+                return s
+        return random.choice(self._strategies)  # Fallback
+
+    def mutate(self, population: Population) -> Population:
+        mutated_individuals = []
+        for circuit in population.get_individuals():
+            individual_copy = deepcopy(circuit)
+            if random.random() < self.mutation_rate:
+                strategy = self._select_strategy()
+
+                # Para estratégias que não calculam fitness, nós o fazemos aqui
+                original_fitness, _ = self._fitness_evaluator.evaluate(individual_copy)
+
+                # Aplica a mutação (que agora pode ou não calcular a recompensa)
+                mutated_circuit = strategy.mutate_individual(individual_copy)
+                mutated_fitness, _ = self._fitness_evaluator.evaluate(mutated_circuit)
+                reward = mutated_fitness - original_fitness
+
+                # Atualiza as estatísticas do MAB
+                strategy_name = strategy.__class__.__name__
+                self._counts[strategy_name] += 1
+                self._rewards[strategy_name] += reward
+                self._total_applications += 1
+
+                mutated_individuals.append(mutated_circuit)
+            else:
+                mutated_individuals.append(individual_copy)
+
         return Population(mutated_individuals)
 
 
