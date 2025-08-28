@@ -67,6 +67,13 @@ class AppContainer(containers.DeclarativeContainer):
         circuit_adapter=qiskit_adapter
     )
 
+    weighted_fidelity_evaluator = providers.Factory(
+        fitness.WeightedFidelityFitnessEvaluator,
+        target_statevector=target_statevector,
+        circuit_adapter=qiskit_adapter,
+        target_depth=config.quantum.target_depth
+    )
+
     # --- Seleção ---
     parent_selector = providers.Factory(
         selection.TournamentSelection,
@@ -127,7 +134,8 @@ class AppContainer(containers.DeclarativeContainer):
 
     optimizer = providers.Factory(
         optimizer.Optimizer,
-        fitness_evaluator=fitness_evaluator,
+        # fitness_evaluator=fitness_evaluator,
+        fitness_evaluator=weighted_fidelity_evaluator,
         parent_selection=parent_selector,
         survivor_selection=survivor_selector,
         crossover=crossover_strategy,

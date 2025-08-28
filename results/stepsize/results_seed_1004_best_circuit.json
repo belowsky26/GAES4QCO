@@ -1,0 +1,199 @@
+{
+    "count_qubits": 4,
+    "depth": 7,
+    "fitness": 0.5858337589330188,
+    "columns": [
+        {
+            "gates": [
+                {
+                    "gate_class_name": "IGate",
+                    "qubits": [
+                        0
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "PhaseGate",
+                    "qubits": [
+                        2,
+                        0,
+                        1
+                    ],
+                    "parameters": [
+                        0.5500819120905869
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 2,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RYGate",
+                    "qubits": [
+                        0
+                    ],
+                    "parameters": [
+                        0.8700220049121021
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5555555555555556,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "SwapGate",
+                    "qubits": [
+                        1,
+                        0
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RXXGate",
+                    "qubits": [
+                        3,
+                        2
+                    ],
+                    "parameters": [
+                        2.6351642244552815
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5555555555555556,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RZXGate",
+                    "qubits": [
+                        3,
+                        2,
+                        1,
+                        0
+                    ],
+                    "parameters": [
+                        1.675691778471823
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5555555555555556,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 2,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RYGate",
+                    "qubits": [
+                        3,
+                        0,
+                        1,
+                        2
+                    ],
+                    "parameters": [
+                        2.919994530138594
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.6172839506172839,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1,
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 3,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RXXGate",
+                    "qubits": [
+                        3,
+                        0,
+                        2,
+                        1
+                    ],
+                    "parameters": [
+                        0.9384714399965394
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5555555555555556,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 2,
+                    "is_inverse": false
+                }
+            ]
+        }
+    ]
+}

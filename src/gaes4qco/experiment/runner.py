@@ -48,7 +48,8 @@ class ExperimentRunner:
 
         self.container.config.from_dict({
             "quantum": {
-                "num_qubits": self.config.num_qubits
+                "num_qubits": self.config.num_qubits,
+                "target_depth": self.config.target_depth
             },
             "evolution": {
                 "population_size": self.config.population_size,

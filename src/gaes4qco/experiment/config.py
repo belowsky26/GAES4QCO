@@ -13,6 +13,7 @@ class ExperimentConfig:
     num_qubits: int
     max_depth: int
     min_depth: int
+    target_depth: int
     population_size: int
     max_generations: int
     target_statevector_data: List[Any]

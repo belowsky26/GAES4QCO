@@ -54,7 +54,7 @@ def create_random_target_statevector(num_qubits: int, depth: int, seed: int) -> 
 def main():
     # 1. Parâmetros Gerais do Lote de Experimentos
     NUM_QUBITS = 4
-    NUM_EXPERIMENTS = 10  # Quantidade de execuções com seeds diferentes
+    NUM_EXPERIMENTS = 2  # Quantidade de execuções com seeds diferentes
 
     # 2. Criação do Circuito Alvo Aleatório (feito uma vez)
     targets_sv_data = []
@@ -72,11 +72,12 @@ def main():
             num_qubits=NUM_QUBITS,
             max_depth=15,
             min_depth=2,
+            target_depth=8,
             elitism_size=5,
             population_size=200,
-            max_generations=100,
+            max_generations=1000,
             target_statevector_data=targets_sv_data.pop()
-        ) for s in range(1001, 1001 + NUM_EXPERIMENTS)  # <-- Exemplo: rodando 10 experimentos com seeds de 0 a 9
+        ) for s in range(1111, 1111 + NUM_EXPERIMENTS)  # <-- Exemplo: rodando 10 experimentos com seeds de 0 a 9
     ]
 
     # 2. Cria o gerenciador de experimentos

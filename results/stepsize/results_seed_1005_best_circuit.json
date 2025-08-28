@@ -1,0 +1,578 @@
+{
+    "count_qubits": 4,
+    "depth": 15,
+    "fitness": 0.6966306107954233,
+    "columns": [
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RZXGate",
+                    "qubits": [
+                        2,
+                        1,
+                        0
+                    ],
+                    "parameters": [
+                        2.3479364808584866
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 1,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "ZGate",
+                    "qubits": [
+                        3
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RYYGate",
+                    "qubits": [
+                        3,
+                        2,
+                        1
+                    ],
+                    "parameters": [
+                        1.7822245022045582
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.45,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                0
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 1,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RYGate",
+                    "qubits": [
+                        0
+                    ],
+                    "parameters": [
+                        0.2621145769542344
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RYYGate",
+                    "qubits": [
+                        2,
+                        3,
+                        1
+                    ],
+                    "parameters": [
+                        2.8564380628814057
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.405,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                0,
+                                0
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 1,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RGate",
+                    "qubits": [
+                        0
+                    ],
+                    "parameters": [
+                        0.06802350912637092,
+                        1.9353447598621676
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        },
+                        {
+                            "variation": 0.5555555555555556,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RYYGate",
+                    "qubits": [
+                        3,
+                        2,
+                        1
+                    ],
+                    "parameters": [
+                        2.560200842148718
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 1,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RGate",
+                    "qubits": [
+                        0
+                    ],
+                    "parameters": [
+                        0.12652803559758963,
+                        0.9702252963208369
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5555555555555556,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1
+                            ],
+                            "mean": 0.0
+                        },
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "ZGate",
+                    "qubits": [
+                        3
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RYYGate",
+                    "qubits": [
+                        0,
+                        1
+                    ],
+                    "parameters": [
+                        0.6607005219347798
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.45,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                0
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RZZGate",
+                    "qubits": [
+                        3,
+                        2
+                    ],
+                    "parameters": [
+                        2.2629770767394315
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "SXGate",
+                    "qubits": [
+                        1,
+                        0
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 1,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "XGate",
+                    "qubits": [
+                        3
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RCCXGate",
+                    "qubits": [
+                        0,
+                        2,
+                        1
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RZZGate",
+                    "qubits": [
+                        0,
+                        3
+                    ],
+                    "parameters": [
+                        1.3553790325521662
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "SGate",
+                    "qubits": [
+                        2
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "DCXGate",
+                    "qubits": [
+                        3,
+                        2
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RXXGate",
+                    "qubits": [
+                        1,
+                        0
+                    ],
+                    "parameters": [
+                        1.5878665680217536
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "TGate",
+                    "qubits": [
+                        2
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": true
+                },
+                {
+                    "gate_class_name": "HGate",
+                    "qubits": [
+                        3
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RXXGate",
+                    "qubits": [
+                        0,
+                        1
+                    ],
+                    "parameters": [
+                        0.3041591962229612
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.6858710562414265,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [
+                                1,
+                                1,
+                                1
+                            ],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "DCXGate",
+                    "qubits": [
+                        2,
+                        1,
+                        3
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 1,
+                    "is_inverse": true
+                },
+                {
+                    "gate_class_name": "SXGate",
+                    "qubits": [
+                        0
+                    ],
+                    "parameters": [],
+                    "step_sizes": [],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "XXMinusYYGate",
+                    "qubits": [
+                        3,
+                        0,
+                        1,
+                        2
+                    ],
+                    "parameters": [
+                        2.0796687142647765
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 2,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RZZGate",
+                    "qubits": [
+                        2,
+                        1,
+                        0,
+                        3
+                    ],
+                    "parameters": [
+                        1.6090126262630253
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 2,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RZXGate",
+                    "qubits": [
+                        1,
+                        0
+                    ],
+                    "parameters": [
+                        0.03303225137556796
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                },
+                {
+                    "gate_class_name": "RZZGate",
+                    "qubits": [
+                        3,
+                        2
+                    ],
+                    "parameters": [
+                        0.33947802416500356
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 0,
+                    "is_inverse": false
+                }
+            ]
+        },
+        {
+            "gates": [
+                {
+                    "gate_class_name": "RYGate",
+                    "qubits": [
+                        1,
+                        3,
+                        0,
+                        2
+                    ],
+                    "parameters": [
+                        2.1731322154573958
+                    ],
+                    "step_sizes": [
+                        {
+                            "variation": 0.5,
+                            "c": 0.9,
+                            "history_len": 5,
+                            "history": [],
+                            "mean": 0.0
+                        }
+                    ],
+                    "extra_controls": 3,
+                    "is_inverse": false
+                }
+            ]
+        }
+    ]
+}

@@ -14,11 +14,13 @@ class Circuit:
             count_qubits: int,
             columns: List[Column],
             fitness: float = 0.0,
+            fidelity: float = 0.0,
             apply_evolutionary_strategy: bool = False
     ):
         self.count_qubits = count_qubits
         self.columns = columns
         self.fitness = fitness
+        self.fidelity = fidelity
         self.apply_evolutionary_strategy = apply_evolutionary_strategy
         self._structural_representation: Set[Tuple] = set()
 
@@ -60,5 +62,6 @@ class Circuit:
             "count_qubits": self.count_qubits,
             "depth": self.depth,
             "fitness": self.fitness,
+            "fidelity": self.fidelity,
             "columns": [col.to_dict() for col in self.columns]
         }

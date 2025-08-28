@@ -83,7 +83,7 @@ class Optimizer:
         """
         for individual in population.get_individuals():
             if individual.fitness == 0.0:  # Assume 0.0 como não avaliado
-                individual.fitness = self._fitness_evaluator.evaluate(individual)
+                individual.fitness, individual.fidelity = self._fitness_evaluator.evaluate(individual)
 
     def _inject_fresh_blood(self, population: Population):
         """Substitui os piores indivíduos por novos indivíduos aleatórios."""

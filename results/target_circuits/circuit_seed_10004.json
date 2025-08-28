@@ -2,6 +2,7 @@
     "count_qubits": 4,
     "depth": 20,
     "fitness": 0.0,
+    "fidelity": 0.0,
     "columns": [
         {
             "gates": [
