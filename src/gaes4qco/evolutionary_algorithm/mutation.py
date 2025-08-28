@@ -137,7 +137,7 @@ class SingleGateFlipMutation(BaseMutationStrategy):
         col_idx, target_col = random.choice(non_empty_cols)
         gate_idx_to_remove = random.randrange(len(target_col.gates))
         removed_gate = target_col.gates.pop(gate_idx_to_remove)
-        new_gate = self._gate_factory.build_gate(available_qubits=removed_gate.qubits, use_evolutionary_strategy=self.use_evolutionary_strategy)
+        new_gate = self._gate_factory.build_gate(removed_gate.qubits, self.use_evolutionary_strategy)
         target_col.add_gate(new_gate)
         return circuit
 

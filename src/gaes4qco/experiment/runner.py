@@ -36,20 +36,22 @@ class ExperimentRunner:
         print(f"---   Iniciando Experimento com Seed {self.config.seed}   ---")
         start_time = time.time()
 
-        # Semeia a aleatoriedade
         random.seed(self.config.seed)
         np.random.seed(self.config.seed)
 
-        # Configura o container com os parâmetros deste experimento específico
-        target_sv_object = Statevector(self.config.target_statevector_data)
-        self.container.target_statevector.override(
-            providers.Object(target_sv_object)
+        self.container.optimization.target_statevector.override(
+            providers.Singleton(Statevector, self.config.target_statevector_data)
         )
 
         self.container.config.from_dict({
             "quantum": {
                 "num_qubits": self.config.num_qubits,
                 "target_depth": self.config.target_depth
+            },
+            "selection_strategy": {
+                "fitness": "weighted" if self.config.use_weighted_fitness else "default",
+                "rate_adapter": "adaptive" if self.config.use_adaptive_rates else "default",
+                "mutation": "bandit" if self.config.use_bandit_mutation else "default",
             },
             "evolution": {
                 "population_size": self.config.population_size,
@@ -60,7 +62,7 @@ class ExperimentRunner:
                 "max_depth": self.config.max_depth,
                 "diversity_threshold": self.config.diversity_threshold,
                 "injection_rate": self.config.injection_rate,
-                "stepsize": self.config.stepsize,
+                "stepsize": self.config.use_stepsize,
             },
             "adaptive_rates": {
                 "min_mutation_rate": self.config.min_mutation_rate,
@@ -73,11 +75,10 @@ class ExperimentRunner:
             }
         })
 
-        # Pega os componentes necessários do container
         optimizer = self.container.optimizer()
-        pop_factory = self.container.population_factory()
+        # A population_factory depende do circuit_factory, que está no sub-container 'circuit'
+        pop_factory = self.container.population()
 
-        # Executa a otimização
         initial_pop = pop_factory.create(
             population_size=self.config.population_size,
             num_qubits=self.config.num_qubits,
@@ -90,7 +91,8 @@ class ExperimentRunner:
             max_generations=self.config.max_generations
         )
 
-        adapter = self.container.qiskit_adapter()
+        # ## CORREÇÃO 3: Acessa o qiskit_adapter através do sub-container 'circuit' ##
+        adapter = self.container.circuit.qiskit_adapter()
         output_base_path = self.config.results_filename.replace('.json', '')
         save_circuit_details(best_circuit, adapter, f"{output_base_path}_best_circuit")
 
@@ -98,7 +100,6 @@ class ExperimentRunner:
         duration = end_time - start_time
         print(f"---   Fim Experimento Seed {self.config.seed} | Duração: {duration:.2f}s   ---")
 
-        # Retorna um dicionário com os resultados importantes
         return {
             "seed": self.config.seed,
             "best_fitness": best_circuit.fitness,
@@ -106,8 +107,6 @@ class ExperimentRunner:
         }
 
 
-# Função standalone para ser usada pelo multiprocessing
-# Ela garante que cada processo crie seus próprios objetos, evitando problemas de "pickling".
 def run_experiment_from_config(config: ExperimentConfig) -> dict:
     runner = ExperimentRunner(config)
     return runner.run()

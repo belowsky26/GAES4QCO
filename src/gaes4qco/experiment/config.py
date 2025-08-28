@@ -9,7 +9,10 @@ PROJECT_ROOT = Path(__file__).parents[3]
 class ExperimentConfig:
     """Encapsula todos os parâmetros para uma única execução do GA."""
     seed: int
-    stepsize: bool
+    use_stepsize: bool
+    use_weighted_fitness: bool
+    use_adaptive_rates: bool
+    use_bandit_mutation: bool
     num_qubits: int
     max_depth: int
     min_depth: int
@@ -31,4 +34,4 @@ class ExperimentConfig:
     results_filename: str = field(init=False)
 
     def __post_init__(self):
-        self.results_filename = str(PROJECT_ROOT / "results" / f"{'stepsize' if self.stepsize else 'normal'}" / f"results_seed_{self.seed}.json")
+        self.results_filename = str(PROJECT_ROOT / "results" / f"{'stepsize' if self.use_stepsize else 'normal'}" / f"results_seed_{self.seed}.json")
