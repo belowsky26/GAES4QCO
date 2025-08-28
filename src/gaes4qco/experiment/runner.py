@@ -62,6 +62,12 @@ class ExperimentRunner:
                 "injection_rate": self.config.injection_rate,
                 "stepsize": self.config.stepsize,
             },
+            "adaptive_rates": {
+                "min_mutation_rate": self.config.min_mutation_rate,
+                "max_mutation_rate": self.config.max_mutation_rate,
+                "min_crossover_rate": self.config.min_crossover_rate,
+                "max_crossover_rate": self.config.max_crossover_rate,
+            },
             "observer": {
                 "filename": self.config.results_filename
             }

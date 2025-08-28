@@ -4,6 +4,7 @@ from evolutionary_algorithm.interfaces import (
     ISelectionStrategy, ICrossoverStrategy, IMutationStrategy
 )
 from evolutionary_algorithm.population import Population
+from evolutionary_algorithm.rate_adapter import IRateAdapter
 from .interfaces import IFitnessEvaluator, IProgressObserver
 
 
@@ -21,9 +22,10 @@ class Optimizer:
             crossover: ICrossoverStrategy,
             mutation: IMutationStrategy,
             population_factory: PopulationFactory,
+            rate_adapter: IRateAdapter,
             diversity_threshold: float,
             injection_rate: float,
-            observer: IProgressObserver = None
+            observer: IProgressObserver
     ):
         self._fitness_evaluator = fitness_evaluator
         self._parent_selection = parent_selection
@@ -31,6 +33,7 @@ class Optimizer:
         self._crossover = crossover
         self._mutation = mutation
         self._population_factory = population_factory
+        self._rate_adapter = rate_adapter
         self._diversity_threshold = diversity_threshold
         self._injection_rate = injection_rate
         self._observer = observer
@@ -52,6 +55,9 @@ class Optimizer:
                 print(f"  -> Low diversity detected ({current_diversity:.4f}). Injecting fresh individuals.")
                 self._inject_fresh_blood(current_population)
 
+            current_rates = self._rate_adapter.adapt(current_diversity)
+            self._crossover.crossover_rate = current_rates.crossover_rate
+            self._mutation.mutation_rate = current_rates.mutation_rate
             # 1. Seleção dos Pais
             parent_population = self._parent_selection.select(current_population)
 

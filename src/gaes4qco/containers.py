@@ -10,6 +10,7 @@ from evolutionary_algorithm import (
     population_factory
 )
 from optimization import fitness, observer, optimizer
+from evolutionary_algorithm import rate_adapter
 
 
 class AppContainer(containers.DeclarativeContainer):
@@ -123,7 +124,20 @@ class AppContainer(containers.DeclarativeContainer):
         mutation_strategies=mutation_pool,
         mutation_rate=config.evolution.mutation_rate
     )
+    # --- Adaptadores de Taxa de Mutação e Crossover ---
+    fixed_rate_adapter = providers.Factory(
+        rate_adapter.FixedRateAdapter,
+        crossover_rate=config.evolution.crossover_rate,
+        mutation_rate=config.evolution.mutation_rate
+    )
 
+    adaptive_rate_adapter = providers.Factory(
+        rate_adapter.DiversityAdaptiveRateAdapter,
+        min_mutation_rate=config.adaptive_rates.min_mutation_rate,
+        max_mutation_rate=config.adaptive_rates.max_mutation_rate,
+        min_crossover_rate=config.adaptive_rates.min_crossover_rate,
+        max_crossover_rate=config.adaptive_rates.max_crossover_rate
+    )
     # ==================================================================
     # 5. Componentes de Alto Nível (Observer e Optimizer)
     # ==================================================================
@@ -141,6 +155,8 @@ class AppContainer(containers.DeclarativeContainer):
         crossover=crossover_strategy,
         mutation=mutation_strategy,
         population_factory=population_factory,
+        # rate_adapter=fixed_rate_adapter,
+        rate_adapter=adaptive_rate_adapter,
         diversity_threshold=config.evolution.diversity_threshold,
         injection_rate=config.evolution.injection_rate,
         observer=progress_observer,
