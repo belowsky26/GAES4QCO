@@ -24,7 +24,6 @@ class OptimizationContainer(containers.DeclarativeContainer):
     config = providers.Configuration()
     gateways = providers.DependenciesContainer()
 
-    # O target_statevector criado com os dados passados na configuração do experimento
     target_statevector = providers.Singleton(
         Statevector,
         data=config.quantum.target_statevector_data
@@ -148,11 +147,6 @@ class AppContainer(containers.DeclarativeContainer):
         config=config
     )
 
-    population = providers.Factory(
-        population_factory.PopulationFactory,
-        circuit_factory=circuit.circuit_factory
-    )
-
     # 2. Componentes de Otimização (dependem do container de circuito)
     optimization = providers.Container(
         OptimizationContainer,
@@ -166,6 +160,10 @@ class AppContainer(containers.DeclarativeContainer):
         config=config,
         factories=circuit,
         optimization=optimization
+    )
+    population = providers.Factory(
+        population_factory.PopulationFactory,
+        circuit_factory=circuit.circuit_factory
     )
 
     # 4. Montagem do Optimizer Principal (componente de mais alto nível)

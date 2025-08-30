@@ -2,6 +2,7 @@ import numpy as np
 import random
 import time
 import json
+from pathlib import Path
 
 from dependency_injector import providers
 from qiskit.quantum_info import Statevector
@@ -15,6 +16,8 @@ from .config import ExperimentConfig
 def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, filepath_base: str):
     """Salva a estrutura de um circuito em .json e sua representação em .txt."""
     print(f"Salvando detalhes do circuito em '{filepath_base}.json/.txt'...")
+    Path(filepath_base).parent.mkdir(parents=True, exist_ok=True)
+
     with open(f"{filepath_base}.json", 'w', encoding='utf-8') as f:
         json.dump(circuit.to_dict(), f, indent=4)
     qiskit_circuit = adapter.from_domain(circuit)
@@ -35,6 +38,12 @@ class ExperimentRunner:
         """
         print(f"---   Iniciando Experimento com Seed {self.config.seed}   ---")
         start_time = time.time()
+
+        config_filepath = self.config.results_filename.replace('.json', '_config.json')
+        print(f"Salvando configuração do experimento em: {config_filepath}")
+        Path(config_filepath).parent.mkdir(parents=True, exist_ok=True)
+        with open(config_filepath, 'w', encoding='utf-8') as f:
+            json.dump(self.config.to_dict(), f, indent=4)
 
         random.seed(self.config.seed)
         np.random.seed(self.config.seed)
@@ -76,7 +85,6 @@ class ExperimentRunner:
         })
 
         optimizer = self.container.optimizer()
-        # A population_factory depende do circuit_factory, que está no sub-container 'circuit'
         pop_factory = self.container.population()
 
         initial_pop = pop_factory.create(
@@ -93,8 +101,8 @@ class ExperimentRunner:
 
         # ## CORREÇÃO 3: Acessa o qiskit_adapter através do sub-container 'circuit' ##
         adapter = self.container.circuit.qiskit_adapter()
-        output_base_path = self.config.results_filename.replace('.json', '')
-        save_circuit_details(best_circuit, adapter, f"{output_base_path}_best_circuit")
+        output_base_path = self.config.results_filename.replace('.json', '_best_fitness_circuit')
+        save_circuit_details(best_circuit, adapter, output_base_path)
 
         end_time = time.time()
         duration = end_time - start_time

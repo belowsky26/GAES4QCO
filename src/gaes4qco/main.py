@@ -88,8 +88,8 @@ def main():
                 min_depth=2,
                 target_depth=8,
                 elitism_size=5,
-                population_size=200,
-                max_generations=1000,
+                population_size=100,
+                max_generations=25,
                 target_statevector_data=target_sv_data
             ) for s in range(INITIAL_SEED_EXPERIMENTS, INITIAL_SEED_EXPERIMENTS + NUM_EXPERIMENTS_PER_TARGET)
         ]
