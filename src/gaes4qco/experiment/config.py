@@ -16,6 +16,7 @@ class ExperimentConfig:
     use_adaptive_rates: bool
     use_bandit_mutation: bool
     use_nsga2_survivor_selection: bool
+    use_fitness_sharing: bool
     num_qubits: int
     max_depth: int
     min_depth: int
@@ -33,6 +34,8 @@ class ExperimentConfig:
     max_crossover_rate: float = 0.95
     diversity_threshold: float = 0.1  # Limiar de 10%
     injection_rate: float = 0.9  # Injeta 90% quando ativado
+    sharing_radius: float = 0.4
+    alpha: float = 1.0
     # O nome do arquivo de resultados é derivado da semente
     results_filename: str = field(init=False)
 

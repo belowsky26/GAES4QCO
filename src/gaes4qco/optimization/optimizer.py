@@ -1,11 +1,14 @@
+from typing import List
+
 from evolutionary_algorithm.population_factory import PopulationFactory
+from evolutionary_algorithm.selection import NSGA2Selection
 from quantum_circuit.circuit import Circuit
 from evolutionary_algorithm.interfaces import (
-    ISelectionStrategy, ICrossoverStrategy, IMutationStrategy
+    ISelectionStrategy, ICrossoverStrategy, IMutationPopulation
 )
 from evolutionary_algorithm.population import Population
 from evolutionary_algorithm.rate_adapter import IRateAdapter
-from .interfaces import IFitnessEvaluator, IProgressObserver
+from .interfaces import IFitnessEvaluator, IProgressObserver, IFitnessShaper
 
 
 class Optimizer:
@@ -20,11 +23,12 @@ class Optimizer:
             parent_selection: ISelectionStrategy,
             survivor_selection: ISelectionStrategy,
             crossover: ICrossoverStrategy,
-            mutation: IMutationStrategy,
+            mutation: IMutationPopulation,
             population_factory: PopulationFactory,
             rate_adapter: IRateAdapter,
             diversity_threshold: float,
             injection_rate: float,
+            fitness_shaper: IFitnessShaper,
             observer: IProgressObserver
     ):
         self._fitness_evaluator = fitness_evaluator
@@ -36,9 +40,10 @@ class Optimizer:
         self._rate_adapter = rate_adapter
         self._diversity_threshold = diversity_threshold
         self._injection_rate = injection_rate
+        self._fitness_shaper = fitness_shaper
         self._observer = observer
 
-    def run(self, initial_population: Population, max_generations: int) -> Circuit:
+    def run(self, initial_population: Population, max_generations: int) -> List[Circuit]:
         """
         Executa o fluxo do algoritmo genético por um número de gerações.
         """
@@ -80,7 +85,16 @@ class Optimizer:
             self._observer.save()
 
         print("Optimization finished.")
-        return current_population.get_fittest()
+
+        if isinstance(self._survivor_selection, NSGA2Selection):
+            print(
+                f"Resultado (NSGA-II): Retornando a primeira Fronteira de Pareto com {len(current_population)} soluções.")
+            return current_population.get_individuals()
+        else:
+            # Para single-objective, retorna uma lista contendo apenas o melhor
+            print("Resultado (Single-Objective): Retornando o melhor indivíduo.")
+            best_circuit = current_population.get_fittest()
+            return [best_circuit]
 
     def _evaluate_population(self, population: Population):
         """
@@ -90,6 +104,7 @@ class Optimizer:
         for individual in population.get_individuals():
             if individual.fitness == 0.0:  # Assume 0.0 como não avaliado
                 individual.fitness, individual.fidelity = self._fitness_evaluator.evaluate(individual)
+        self._fitness_shaper.shape(population)
 
     def _inject_fresh_blood(self, population: Population):
         """Substitui os piores indivíduos por novos indivíduos aleatórios."""

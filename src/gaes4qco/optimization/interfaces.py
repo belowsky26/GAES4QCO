@@ -14,6 +14,14 @@ class IFitnessEvaluator(ABC):
         pass
 
 
+class IFitnessShaper(ABC):
+    """Interface para classes que ajustam/modelam o fitness de uma população inteira."""
+    @abstractmethod
+    def shape(self, population: Population):
+        """Aplica uma transformação nos valores de fitness dos indivíduos da população."""
+        pass
+
+
 class IProgressObserver(ABC):
     """Interface para classes que observam e registram o progresso do algoritmo."""
 

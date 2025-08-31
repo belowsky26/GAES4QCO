@@ -1,4 +1,3 @@
-# optimization/fitness.py
 from typing import Tuple
 
 from qiskit.quantum_info import Statevector, state_fidelity

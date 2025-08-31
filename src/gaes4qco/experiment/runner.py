@@ -1,9 +1,10 @@
-import numpy as np
 import random
 import time
 import json
 from pathlib import Path
+from typing import List
 
+import numpy as np
 from dependency_injector import providers
 from qiskit.quantum_info import Statevector
 
@@ -23,6 +24,24 @@ def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, file
     qiskit_circuit = adapter.from_domain(circuit)
     with open(f"{filepath_base}.txt", 'w', encoding='utf-8') as f:
         f.write(str(qiskit_circuit.draw('text')))
+
+
+def save_final_population(circuits: List[Circuit], adapter: IQuantumCircuitAdapter, results_filepath: str):
+    """Salva uma lista de circuitos em uma subpasta dedicada."""
+    # Cria um nome de pasta baseado no arquivo de resultado, ex: ".../s1111_h_abc_final_circuits/"
+    folder_path = Path(results_filepath.replace('.json', '_final_circuits'))
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    print(f"Salvando {len(circuits)} circuitos finais em '{folder_path}'...")
+
+    # Salva cada circuito individualmente
+    for i, circuit in enumerate(circuits):
+        # Ordena por fitness para que o arquivo 0 seja o melhor
+        circuits.sort(key=lambda c: c.fitness, reverse=True)
+        # O nome do arquivo inclui o rank, fitness e profundidade para fácil identificação
+        basename = f"rank_{i:03d}_fit_{circuit.fitness:.4f}_depth_{circuit.depth}"
+        filepath_base = str(folder_path / basename)
+        save_circuit_details(circuit, adapter, filepath_base)
 
 
 class ExperimentRunner:
@@ -59,6 +78,7 @@ class ExperimentRunner:
             },
             "selection_strategy": {
                 "fitness": "weighted" if self.config.use_weighted_fitness else "default",
+                "fitness_shaper": "sharing" if self.config.use_fitness_sharing else "default",
                 "rate_adapter": "adaptive" if self.config.use_adaptive_rates else "default",
                 "mutation": "bandit" if self.config.use_bandit_mutation else "default",
                 "survivor": "nsga2" if self.config.use_nsga2_survivor_selection else "default",
@@ -80,6 +100,10 @@ class ExperimentRunner:
                 "min_crossover_rate": self.config.min_crossover_rate,
                 "max_crossover_rate": self.config.max_crossover_rate,
             },
+            "niching": {
+                "sharing_radius": self.config.sharing_radius,
+                "alpha": self.config.alpha
+            },
             "observer": {
                 "filename": self.config.results_filename
             }
@@ -95,20 +119,19 @@ class ExperimentRunner:
             min_depth=self.config.min_depth
         )
 
-        best_circuit = optimizer.run(
+        final_circuits = optimizer.run(
             initial_population=initial_pop,
             max_generations=self.config.max_generations
         )
 
-        # ## CORREÇÃO 3: Acessa o qiskit_adapter através do sub-container 'circuit' ##
         adapter = self.container.circuit.qiskit_adapter()
-        output_base_path = self.config.results_filename.replace('.json', '_best_fitness_circuit')
-        save_circuit_details(best_circuit, adapter, output_base_path)
+        save_final_population(final_circuits, adapter, self.config.results_filename)
 
         end_time = time.time()
         duration = end_time - start_time
         print(f"---   Fim Experimento Seed {self.config.seed} | Duração: {duration:.2f}s   ---")
 
+        best_circuit = final_circuits[0] if final_circuits else None
         return {
             "seed": self.config.seed,
             "best_fitness": best_circuit.fitness,

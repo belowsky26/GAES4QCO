@@ -3,7 +3,7 @@ from qiskit.quantum_info import Statevector
 
 from quantum_circuit import qiskit_adapter, circuit_factory, gate_factory
 from evolutionary_algorithm import selection, crossover, mutation, population_factory, rate_adapter
-from optimization import fitness, observer, optimizer
+from optimization import fitness, observer, optimizer, fitness_shaper
 
 
 class QuantumCircuitContainer(containers.DeclarativeContainer):
@@ -42,6 +42,18 @@ class OptimizationContainer(containers.DeclarativeContainer):
             fitness.FidelityFitnessEvaluator,
             target_statevector=target_statevector,
             circuit_adapter=gateways.qiskit_adapter
+        ),
+    )
+
+    shaper = providers.Selector(
+        config.selection_strategy.fitness_shaper,
+        sharing=providers.Factory(
+            fitness_shaper.FitnessSharingShaper,
+            sharing_radius=config.niching.sharing_radius,
+            alpha=config.niching.alpha
+        ),
+        default=providers.Factory(
+            fitness_shaper.NullFitnessShaper
         ),
     )
 
@@ -187,5 +199,6 @@ class AppContainer(containers.DeclarativeContainer):
         rate_adapter=evolutionary_algorithm.rate_adapter,
         diversity_threshold=config.evolution.diversity_threshold,
         injection_rate=config.evolution.injection_rate,
+        fitness_shaper=optimization.shaper,
         observer=optimization.observer,
     )
