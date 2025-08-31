@@ -65,12 +65,21 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
         elitism_count=config.evolution.elitism_size,
         survivor_selection=False
     )
-    survivor_selector = providers.Factory(
-        selection.TournamentSelection,
-        population_size=config.evolution.population_size,
-        tournament_size=config.evolution.tournament_size,
-        elitism_count=config.evolution.elitism_size,
-        survivor_selection=True
+    survivor_selector = providers.Selector(
+        config.selection_strategy.survivor,
+        # Opção para o NSGA-II (multiobjetivo)
+        nsga2=providers.Factory(
+            selection.NSGA2Selection,
+            population_size=config.evolution.population_size
+        ),
+        # Opção padrão para o torneio (single-objective)
+        default=providers.Factory(
+            selection.TournamentSelection,
+            population_size=config.evolution.population_size,
+            tournament_size=config.evolution.tournament_size,
+            elitism_count=config.evolution.elitism_size,
+            survivor_selection=True
+        ),
     )
 
     # --- Estratégia de Crossover ---

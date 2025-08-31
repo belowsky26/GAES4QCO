@@ -1,8 +1,8 @@
 import random
 import math
-from typing import List, Dict
+from typing import List
 from copy import deepcopy
-from .interfaces import IMutationStrategy
+from .interfaces import IMutationStrategy, IMutationPopulation
 from .population import Population
 from quantum_circuit.circuit import Circuit, Column
 from quantum_circuit.gate_factory import GateFactory
@@ -10,8 +10,8 @@ from optimization.interfaces import IFitnessEvaluator
 
 
 # --- Classe Composta para aplicar mutações aleatórias ---
-class RandomMutation(IMutationStrategy):
-    def __init__(self, mutation_strategies: List['BaseMutationStrategy'], mutation_rate: float = 0.1):
+class RandomMutation(IMutationPopulation):
+    def __init__(self, mutation_strategies: List[IMutationStrategy], mutation_rate: float = 0.1):
         self._strategies = mutation_strategies
         self.mutation_rate = mutation_rate
 
@@ -33,13 +33,13 @@ class RandomMutation(IMutationStrategy):
 
 
 # --- SELETOR ADAPTATIVO (MAB-UCB) ---
-class BanditMutationSelector(IMutationStrategy):
+class BanditMutationSelector(IMutationPopulation):
     """
     Seleciona um operador de mutação usando um algoritmo Multi-Armed Bandit (UCB1)
     para aprender dinamicamente qual operador é mais eficaz.
     """
 
-    def __init__(self, mutation_strategies: List['BaseMutationStrategy'], mutation_rate: float,
+    def __init__(self, mutation_strategies: List[IMutationStrategy], mutation_rate: float,
                  fitness_evaluator: IFitnessEvaluator):
         self._strategies = mutation_strategies
         self.mutation_rate = mutation_rate
@@ -50,16 +50,18 @@ class BanditMutationSelector(IMutationStrategy):
         self._counts = {s.__class__.__name__: 0 for s in self._strategies}
         self._total_applications = 0
 
-    def _select_strategy(self) -> 'BaseMutationStrategy':
+    def _select_strategy(self, individual: Circuit) -> IMutationStrategy:
         """Seleciona a melhor estratégia usando a fórmula UCB1."""
         # Garante que cada estratégia seja usada pelo menos uma vez
-        for i, s in enumerate(self._strategies):
+        applicable_strategies = [s for s in self._strategies if s.can_apply(individual)]
+
+        for i, s in enumerate(applicable_strategies):
             if self._counts[s.__class__.__name__] == 0:
-                return self._strategies[i]
+                return applicable_strategies[i]
 
         # Calcula a pontuação UCB1 para cada estratégia
         ucb_scores = {}
-        for s in self._strategies:
+        for s in applicable_strategies:
             name = s.__class__.__name__
             avg_reward = self._rewards[name] / self._counts[name]
             exploration_term = math.sqrt((2 * math.log(self._total_applications)) / self._counts[name])
@@ -67,17 +69,17 @@ class BanditMutationSelector(IMutationStrategy):
 
         best_strategy_name = max(ucb_scores, key=ucb_scores.get)
 
-        for s in self._strategies:
+        for s in applicable_strategies:
             if s.__class__.__name__ == best_strategy_name:
                 return s
-        return random.choice(self._strategies)  # Fallback
+        return random.choice(applicable_strategies)  # Fallback
 
     def mutate(self, population: Population) -> Population:
         mutated_individuals = []
         for circuit in population.get_individuals():
             individual_copy = deepcopy(circuit)
             if random.random() < self.mutation_rate:
-                strategy = self._select_strategy()
+                strategy = self._select_strategy(individual_copy)
 
                 # Para estratégias que não calculam fitness, nós o fazemos aqui
                 original_fitness, _ = self._fitness_evaluator.evaluate(individual_copy)
@@ -102,18 +104,7 @@ class BanditMutationSelector(IMutationStrategy):
 
 # --- Classes de Estratégia de Mutação Específicas ---
 
-class BaseMutationStrategy(IMutationStrategy):
-    def mutate(self, population: Population) -> Population:
-        raise NotImplementedError("Use a classe 'RandomMutation' para aplicar mutações.")
-
-    def mutate_individual(self, circuit: Circuit) -> Circuit:
-        raise NotImplementedError
-
-    def can_apply(self, circuit: Circuit) -> bool:
-        return True
-
-
-class SwapColumnsMutation(BaseMutationStrategy):
+class SwapColumnsMutation(IMutationStrategy):
     def can_apply(self, circuit: Circuit) -> bool:
         return circuit.depth > 1
 
@@ -124,7 +115,7 @@ class SwapColumnsMutation(BaseMutationStrategy):
         return circuit
 
 
-class SingleGateFlipMutation(BaseMutationStrategy):
+class SingleGateFlipMutation(IMutationStrategy):
     def __init__(self, gate_factory: GateFactory, use_evolutionary_strategy: bool):
         self._gate_factory = gate_factory
         self.use_evolutionary_strategy = use_evolutionary_strategy
@@ -146,7 +137,7 @@ class SingleGateFlipMutation(BaseMutationStrategy):
 # ## NOVAS CLASSES DE MUTAÇÃO ADICIONADAS ABAIXO
 # ======================================================================
 
-class ChangeDepthMutation(BaseMutationStrategy):
+class ChangeDepthMutation(IMutationStrategy):
     """
     ## Altera a profundidade do circuito, adicionando ou removendo colunas.
     """
@@ -155,6 +146,9 @@ class ChangeDepthMutation(BaseMutationStrategy):
         self.max_depth = max_depth
         self._gate_factory = gate_factory
         self.use_evolutionary_strategy = use_evolutionary_strategy
+
+    def can_apply(self, individual: Circuit) -> bool:
+        return True
 
     def mutate_individual(self, circuit: Circuit) -> Circuit:
 
@@ -193,7 +187,7 @@ class ChangeDepthMutation(BaseMutationStrategy):
         return circuit
 
 
-class GateParameterMutation(BaseMutationStrategy):
+class GateParameterMutation(IMutationStrategy):
     """
     ## Ajusta um parâmetro de gate (ângulo) e atualiza o StepSize.
     ## Esta é a implementação da Estratégia Evolucionária.
@@ -208,22 +202,18 @@ class GateParameterMutation(BaseMutationStrategy):
     def can_apply(self, circuit: Circuit) -> bool:
         # Aplicável se houver algum gate com parâmetros e step_sizes
         return any(
-            gate.parameters and gate.steps_sizes
+            (gate.parameters and gate.steps_sizes)
             for col in circuit.columns for gate in col.get_gates()
         )
 
     def mutate_individual(self, circuit: Circuit) -> Circuit:
-        # A lógica de 'add_hit' e '__reset_variation' foi movida para cá.
-
-        # Encontra todos os parâmetros passíveis de mutação
         mutable_params = []
         for i_col, col in enumerate(circuit.columns):
             for i_gate, gate in enumerate(col.get_gates()):
                 for i_param in range(len(gate.parameters)):
                     mutable_params.append((i_col, i_gate, i_param))
-
         # Avalia o fitness ANTES da mutação
-        original_fitness = self._fitness_evaluator.evaluate(circuit)
+        original_fitness, _ = self._fitness_evaluator.evaluate(circuit)
 
         # Escolhe um parâmetro e o modifica
         i_col, i_gate, i_param = random.choice(mutable_params)
@@ -235,7 +225,7 @@ class GateParameterMutation(BaseMutationStrategy):
         target_gate.parameters[i_param] = (target_gate.parameters[i_param] + change) % (2 * math.pi)
 
         # Avalia o fitness DEPOIS da mutação
-        mutated_fitness = self._fitness_evaluator.evaluate(circuit)
+        mutated_fitness, _ = self._fitness_evaluator.evaluate(circuit)
 
         # Regra de 1/5 de sucesso para atualizar o StepSize
         success = mutated_fitness > original_fitness
@@ -252,7 +242,7 @@ class GateParameterMutation(BaseMutationStrategy):
         return circuit
 
 
-class SwapControlTargetMutation(BaseMutationStrategy):
+class SwapControlTargetMutation(IMutationStrategy):
     """
     ## Em um gate controlado, troca um qubit de controle por um de alvo.
     """

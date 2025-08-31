@@ -15,6 +15,7 @@ class ExperimentConfig:
     use_weighted_fitness: bool
     use_adaptive_rates: bool
     use_bandit_mutation: bool
+    use_nsga2_survivor_selection: bool
     num_qubits: int
     max_depth: int
     min_depth: int
@@ -41,8 +42,8 @@ class ExperimentConfig:
         rate_flag = "A" if self.use_adaptive_rates else "F"  # Adaptive vs Fixed
         mut_flag = "B" if self.use_bandit_mutation else "R"  # Bandit vs Random
         step_flag = "T" if self.use_stepsize else "F"  # True vs False
-
-        return f"fit={fit_flag}_rates={rate_flag}_mut={mut_flag}_step={step_flag}"
+        select_survivor_flag = "N" if self.use_nsga2_survivor_selection else "T"
+        return f"fit={fit_flag}_rates={rate_flag}_mut={mut_flag}_step={step_flag}_selectsurvior={select_survivor_flag}"
 
     def get_config_hash(self) -> str:
         """

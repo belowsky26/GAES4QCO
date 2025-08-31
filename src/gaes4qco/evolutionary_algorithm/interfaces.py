@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+
+from quantum_circuit.circuit import Circuit
 from .population import Population           # Importamos nossa classe Population
 
 
@@ -25,13 +27,29 @@ class ICrossoverStrategy(ABC):
         pass
 
 
+class IMutationPopulation(ABC):
+    @abstractmethod
+    def mutate(self, population: Population) -> Population:
+        """
+        ## Recebe uma população e retorna uma nova população com mutações aplicadas.
+        """
+        pass
+
+
 class IMutationStrategy(ABC):
     """
     ## Interface para estratégias de mutação.
     """
     @abstractmethod
-    def mutate(self, population: Population) -> Population:
+    def mutate_individual(self, individual: Circuit) -> Circuit:
         """
         ## Recebe uma população e retorna uma nova população com mutações aplicadas.
+        """
+        pass
+
+    @abstractmethod
+    def can_apply(self, individual: Circuit) -> bool:
+        """
+        ## Recebe um circuito e diz se essa mutação é capaz de ser executada
         """
         pass

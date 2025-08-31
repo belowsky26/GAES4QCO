@@ -14,15 +14,26 @@ class Circuit:
             count_qubits: int,
             columns: List[Column],
             fitness: float = 0.0,
-            fidelity: float = 0.0,
-            apply_evolutionary_strategy: bool = False
+            fidelity: float = 0.0
     ):
         self.count_qubits = count_qubits
         self.columns = columns
         self.fitness = fitness
         self.fidelity = fidelity
-        self.apply_evolutionary_strategy = apply_evolutionary_strategy
+
+        self.rank: int = -1  # Rank da Fronteira de Pareto
+        self.crowding_distance: float = 0.0  # Distância de multidão para desempate
+
         self._structural_representation: Set[Tuple] = set()
+
+    @property
+    def objectives(self) -> Tuple[float, ...]:
+        """
+        Retorna a tupla de objetivos para a otimização multiobjetivo.
+        Objetivo 1: Maximizar a Fidelidade (ou o fitness ponderado).
+        Objetivo 2: Maximizar a Profundidade Negativa (ou seja, Minimizar a Profundidade).
+        """
+        return self.fidelity, -float(self.depth)
 
     @property
     def depth(self) -> int:
@@ -63,5 +74,7 @@ class Circuit:
             "depth": self.depth,
             "fitness": self.fitness,
             "fidelity": self.fidelity,
+            "nsga2_rank": self.rank,  # Adiciona os novos campos para depuração
+            "nsga2_crowding_distance": self.crowding_distance,
             "columns": [col.to_dict() for col in self.columns]
         }

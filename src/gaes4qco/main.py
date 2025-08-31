@@ -59,10 +59,10 @@ def main():
     # --- Configuração Geral dos Experimentos ---
     NUM_QUBITS = 4
     DEPTH_GEN_TARGET = 20
-    NUM_TARGETS = 2  # Quantidade de Targets criados
+    NUM_TARGETS = 1  # Quantidade de Targets criados
     NUM_EXPERIMENTS_PER_TARGET = 1  # Quantidade de Experimentos por Target
-    INITIAL_SEED_TARGETS = 10000  # Semente Inicial para gerar os circuitos alvos
-    INITIAL_SEED_EXPERIMENTS = 1111  # Semente inicial para as execuções do GA
+    INITIAL_SEED_TARGETS = 10001  # Semente Inicial para gerar os circuitos alvos
+    INITIAL_SEED_EXPERIMENTS = 1112  # Semente inicial para as execuções do GA
 
     # --- Criação dos Alvos para os Experimentos ---
     targets_svs = [
@@ -79,15 +79,16 @@ def main():
         experiment_configs += [
             ExperimentConfig(
                 seed=s,
-                use_stepsize=True,
-                use_weighted_fitness=True,
-                use_adaptive_rates=True,
-                use_bandit_mutation=True,
+                use_stepsize=False, # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
                 num_qubits=NUM_QUBITS,
                 max_depth=15,
                 min_depth=2,
                 target_depth=8,
-                elitism_size=5,
+                elitism_size=5,  # Quando o use_nsga2_survivor_selection=True o elitism size nem é aplicado, mas deixe para não dar erro
                 population_size=100,
                 max_generations=25,
                 target_statevector_data=target_sv_data

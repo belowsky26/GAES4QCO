@@ -61,6 +61,7 @@ class ExperimentRunner:
                 "fitness": "weighted" if self.config.use_weighted_fitness else "default",
                 "rate_adapter": "adaptive" if self.config.use_adaptive_rates else "default",
                 "mutation": "bandit" if self.config.use_bandit_mutation else "default",
+                "survivor": "nsga2" if self.config.use_nsga2_survivor_selection else "default",
             },
             "evolution": {
                 "population_size": self.config.population_size,
