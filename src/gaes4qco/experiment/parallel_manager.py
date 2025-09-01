@@ -8,13 +8,14 @@ from .runner import run_experiment_from_config  # Importa a função standalone
 class ParallelExperimentManager:
     """Gerencia a execução de múltiplos experimentos em paralelo."""
 
-    def __init__(self, configs: List[ExperimentConfig]):
+    def __init__(self, configs: List[ExperimentConfig], max_processes: int):
         self.configs = configs
+        self.max_processes = min(max_processes, cpu_count())
 
     def run_all(self) -> List[dict]:
         """Executa todos os experimentos configurados usando um pool de processos."""
         num_experiments = len(self.configs)
-        num_processes = min(num_experiments, cpu_count())  # Usa no máximo os CPUs disponíveis
+        num_processes = min(num_experiments, self.max_processes)  # Usa no máximo os CPUs disponíveis
 
         print(f"Iniciando {num_experiments} experimentos em {num_processes} processos paralelos...")
         start_time = time.time()

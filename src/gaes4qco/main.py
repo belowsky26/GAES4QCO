@@ -2,11 +2,11 @@ import json
 import numpy as np
 import random
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 from qiskit.quantum_info import Statevector
 
 from containers import AppContainer
-from experiment.config import ExperimentConfig
+from experiment.config import ExperimentConfig, PhaseConfig
 from experiment.parallel_manager import ParallelExperimentManager
 from quantum_circuit.circuit import Circuit
 from quantum_circuit.interfaces import IQuantumCircuitAdapter
@@ -26,7 +26,7 @@ def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, file
         f.write(str(qiskit_circuit.draw('text')))
 
 
-def create_random_target(num_qubits: int, depth: int, seed: int) -> Statevector:
+def create_random_target(num_qubits: int, depth: int, seed: int) -> Tuple[Statevector, str]:
     """
     Usa factories para gerar um circuito aleatório, salvá-lo e
     retornar seu statevector e o objeto de domínio.
@@ -52,7 +52,7 @@ def create_random_target(num_qubits: int, depth: int, seed: int) -> Statevector:
     qiskit_circuit = adapter.from_domain(domain_circuit)
     target_sv = Statevector.from_instruction(qiskit_circuit)
     print("Alvo gerado e salvo com sucesso.")
-    return target_sv
+    return target_sv, str(target_filepath)
 
 
 def main():
@@ -61,43 +61,58 @@ def main():
     DEPTH_GEN_TARGET = 20
     NUM_TARGETS = 1  # Quantidade de Targets criados
     NUM_EXPERIMENTS_PER_TARGET = 1  # Quantidade de Experimentos por Target
-    INITIAL_SEED_TARGETS = 10001  # Semente Inicial para gerar os circuitos alvos
-    INITIAL_SEED_EXPERIMENTS = 1112  # Semente inicial para as execuções do GA
+    INITIAL_SEED_TARGETS = 101  # Semente Inicial para gerar os circuitos alvos
+    INITIAL_SEED_EXPERIMENTS = 1  # Semente inicial para as execuções do GA
 
     # --- Criação dos Alvos para os Experimentos ---
-    targets_svs = [
+    targets_svs_filename = [
         create_random_target(
             num_qubits=NUM_QUBITS, depth=DEPTH_GEN_TARGET, seed=s
         ) for s in range(INITIAL_SEED_TARGETS, INITIAL_SEED_TARGETS + NUM_TARGETS)
     ]
 
     experiment_configs: List[ExperimentConfig] = []
-    for target in targets_svs:
+    for target, filename in targets_svs_filename:
         target_sv_data = target.data.tolist()
 
         # --- Definição da Lista de Configurações para o Lote ---
+        phases = [
+            PhaseConfig(
+                generations=3,
+                fidelity_threshold_stop=0.95,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=True,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=True  # True aumenta tempo de execução
+            ),
+            PhaseConfig(
+                generations=3,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
+                use_fitness_sharing=False,  # True aumenta tempo de execução
+                fidelity_threshold_stop=None
+            )
+        ]
+
         experiment_configs += [
             ExperimentConfig(
                 seed=s,
-                use_stepsize=False,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=False,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
-                use_fitness_sharing=False,  # True aumenta tempo de execução
-                num_qubits=NUM_QUBITS,
-                max_depth=15,
-                min_depth=2,
-                target_depth=8,
-                elitism_size=5,  # Quando o use_nsga2_survivor_selection=True o elitism size nem é aplicado, mas deixe para não dar erro
-                population_size=200,
-                max_generations=10,
-                target_statevector_data=target_sv_data
+                phases=phases,
+                max_depth=20,
+                min_depth=1,
+                target_depth=20,
+                target_statevector_data=target_sv_data,
+                filename_target_circuit=filename,
             ) for s in range(INITIAL_SEED_EXPERIMENTS, INITIAL_SEED_EXPERIMENTS + NUM_EXPERIMENTS_PER_TARGET)
         ]
 
     # --- Execução e Análise ---
-    manager = ParallelExperimentManager(configs=experiment_configs)
+    manager = ParallelExperimentManager(configs=experiment_configs, max_processes=2)
     all_results = manager.run_all()
 
     print("\n--- Resumo dos Resultados ---")

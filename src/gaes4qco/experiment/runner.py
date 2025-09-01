@@ -1,6 +1,7 @@
 import random
 import time
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import List
 
@@ -9,9 +10,10 @@ from dependency_injector import providers
 from qiskit.quantum_info import Statevector
 
 from containers import AppContainer
+from evolutionary_algorithm.population import Population
 from quantum_circuit.circuit import Circuit
 from quantum_circuit.interfaces import IQuantumCircuitAdapter
-from .config import ExperimentConfig
+from .config import ExperimentConfig, PhaseConfig
 
 
 def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, filepath_base: str):
@@ -51,37 +53,20 @@ class ExperimentRunner:
         self.config = config
         self.container = AppContainer()
 
-    def run(self) -> dict:
-        """
-        Configura o container, executa o otimizador e retorna os resultados.
-        """
-        print(f"---   Iniciando Experimento com Seed {self.config.seed}   ---")
-        start_time = time.time()
-
-        config_filepath = self.config.results_filename.replace('.json', '_config.json')
-        print(f"Salvando configuração do experimento em: {config_filepath}")
-        Path(config_filepath).parent.mkdir(parents=True, exist_ok=True)
-        with open(config_filepath, 'w', encoding='utf-8') as f:
-            json.dump(self.config.to_dict(), f, indent=4)
-
-        random.seed(self.config.seed)
-        np.random.seed(self.config.seed)
-
-        self.container.optimization.target_statevector.override(
-            providers.Singleton(Statevector, self.config.target_statevector_data)
-        )
-
+    def _configure_container_for_phase(self, phase_config: PhaseConfig):
+        """Configura o container com os parâmetros de uma fase específica."""
         self.container.config.from_dict({
             "quantum": {
+                "target_statevector_data": self.config.target_statevector_data,
                 "num_qubits": self.config.num_qubits,
                 "target_depth": self.config.target_depth
             },
             "selection_strategy": {
-                "fitness": "weighted" if self.config.use_weighted_fitness else "default",
-                "fitness_shaper": "sharing" if self.config.use_fitness_sharing else "default",
-                "rate_adapter": "adaptive" if self.config.use_adaptive_rates else "default",
-                "mutation": "bandit" if self.config.use_bandit_mutation else "default",
-                "survivor": "nsga2" if self.config.use_nsga2_survivor_selection else "default",
+                "fitness": "weighted" if phase_config.use_weighted_fitness else "default",
+                "fitness_shaper": "sharing" if phase_config.use_fitness_sharing else "default",
+                "rate_adapter": "adaptive" if phase_config.use_adaptive_rates else "default",
+                "mutation": "bandit" if phase_config.use_bandit_mutation else "default",
+                "survivor": "nsga2" if phase_config.use_nsga2_survivor_selection else "default",
             },
             "evolution": {
                 "population_size": self.config.population_size,
@@ -92,7 +77,7 @@ class ExperimentRunner:
                 "max_depth": self.config.max_depth,
                 "diversity_threshold": self.config.diversity_threshold,
                 "injection_rate": self.config.injection_rate,
-                "stepsize": self.config.use_stepsize,
+                "stepsize": phase_config.use_stepsize,
             },
             "adaptive_rates": {
                 "min_mutation_rate": self.config.min_mutation_rate,
@@ -109,20 +94,40 @@ class ExperimentRunner:
             }
         })
 
-        optimizer = self.container.optimizer()
-        pop_factory = self.container.population()
+    def run(self) -> dict:
+        """
+        Configura o container, executa o otimizador e retorna os resultados.
+        """
+        print(f"---   Iniciando Experimento com Seed {self.config.seed}   ---")
+        start_time = time.time()
 
-        initial_pop = pop_factory.create(
-            population_size=self.config.population_size,
-            num_qubits=self.config.num_qubits,
-            max_depth=self.config.max_depth,
-            min_depth=self.config.min_depth
-        )
+        config_filepath = self.config.results_filename.replace('.json', '_config.json')
+        print(f"Salvando configuração do experimento em: {config_filepath}")
+        Path(config_filepath).parent.mkdir(parents=True, exist_ok=True)
+        with open(config_filepath, 'w', encoding='utf-8') as f:
+            json.dump(self.config.to_dict(), f, indent=4)
 
-        final_circuits = optimizer.run(
-            initial_population=initial_pop,
-            max_generations=self.config.max_generations
-        )
+        random.seed(self.config.seed)
+        np.random.seed(self.config.seed)
+
+        population: Population = Population()
+        for i, phase in enumerate(self.config.phases):
+            self._configure_container_for_phase(phase)
+            if i == 0:
+                pop_factory = self.container.population()
+                population = pop_factory.create(
+                    population_size=self.config.population_size,
+                    num_qubits=self.config.num_qubits,
+                    max_depth=self.config.max_depth,
+                    min_depth=self.config.min_depth
+                )
+
+            print(f"\n--- FASE {i} ---")
+            optimizer = self.container.optimizer()
+            population = optimizer.run(population, phase.generations, phase.fidelity_threshold_stop)
+
+        print("Optimization finished.")
+        final_circuits = population.get_individuals()
 
         adapter = self.container.circuit.qiskit_adapter()
         save_final_population(final_circuits, adapter, self.config.results_filename)
@@ -131,7 +136,7 @@ class ExperimentRunner:
         duration = end_time - start_time
         print(f"---   Fim Experimento Seed {self.config.seed} | Duração: {duration:.2f}s   ---")
 
-        best_circuit = final_circuits[0] if final_circuits else None
+        best_circuit = population.get_fittest()
         return {
             "seed": self.config.seed,
             "best_fitness": best_circuit.fitness,

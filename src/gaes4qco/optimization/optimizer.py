@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from evolutionary_algorithm.population_factory import PopulationFactory
 from evolutionary_algorithm.selection import NSGA2Selection
@@ -43,7 +43,12 @@ class Optimizer:
         self._fitness_shaper = fitness_shaper
         self._observer = observer
 
-    def run(self, initial_population: Population, max_generations: int) -> List[Circuit]:
+    def run(
+            self,
+            initial_population: Population,
+            max_generations: int,
+            fidelity_threshold: Optional[float]
+    ) -> Population:
         """
         Executa o fluxo do algoritmo genético por um número de gerações.
         """
@@ -81,20 +86,16 @@ class Optimizer:
 
             current_population = self._survivor_selection.select(mutated_population)
 
+            if fidelity_threshold:
+                best_ind = current_population.get_fittest()
+                if best_ind and best_ind.fidelity >= fidelity_threshold:
+                    print(f"  -> Limiar de Fidelidade {fidelity_threshold} atingido na geração {gen}. Finalizando fase.")
+                    break
+
         if self._observer:
             self._observer.save()
 
-        print("Optimization finished.")
-
-        if isinstance(self._survivor_selection, NSGA2Selection):
-            print(
-                f"Resultado (NSGA-II): Retornando a primeira Fronteira de Pareto com {len(current_population)} soluções.")
-            return current_population.get_individuals()
-        else:
-            # Para single-objective, retorna uma lista contendo apenas o melhor
-            print("Resultado (Single-Objective): Retornando o melhor indivíduo.")
-            best_circuit = current_population.get_fittest()
-            return [best_circuit]
+        return current_population
 
     def _evaluate_population(self, population: Population):
         """
