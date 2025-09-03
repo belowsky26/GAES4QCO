@@ -42,7 +42,7 @@ def create_random_target(num_qubits: int, depth: int, seed: int) -> Tuple[Statev
     adapter = container.circuit.qiskit_adapter()
 
     domain_circuit = circuit_factory.create_random_circuit(
-        num_qubits=num_qubits, max_depth=depth, min_depth=depth
+        num_qubits=num_qubits, max_depth=depth, min_depth=depth, use_evolutionary_strategy=False
     )
 
     # Salva o circuito alvo para referência
@@ -78,27 +78,60 @@ def main():
         # --- Definição da Lista de Configurações para o Lote ---
         phases = [
             PhaseConfig(
-                generations=3,
-                fidelity_threshold_stop=0.95,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=True,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=True  # True aumenta tempo de execução
-            ),
-            PhaseConfig(
-                generations=3,
+                generations=600,
+                fidelity_threshold_stop=0.99,
                 use_stepsize=True,  # True: Aumenta em até 30% o tempo
                 use_weighted_fitness=False,  # Não afeta quase nada ~8%
                 use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=False  # True aumenta tempo de execução
+            ),
+            PhaseConfig(
+                generations=50,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=True,  # True aumenta tempo de execução
+                fidelity_threshold_stop=None
+            ),
+            PhaseConfig(
+                generations=250,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
                 use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
                 use_fitness_sharing=False,  # True aumenta tempo de execução
                 fidelity_threshold_stop=None
             )
         ]
-
+        phases = [
+            PhaseConfig(
+                generations=2,
+                fidelity_threshold_stop=0.99,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,
+                # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=False  # True aumenta tempo de execução
+            ),
+            PhaseConfig(
+                generations=2,
+                fidelity_threshold_stop=None,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=True,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,
+                # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=False  # True aumenta tempo de execução
+            )
+        ]
         experiment_configs += [
             ExperimentConfig(
                 seed=s,
@@ -108,11 +141,12 @@ def main():
                 target_depth=20,
                 target_statevector_data=target_sv_data,
                 filename_target_circuit=filename,
+                resume_from_checkpoint=True
             ) for s in range(INITIAL_SEED_EXPERIMENTS, INITIAL_SEED_EXPERIMENTS + NUM_EXPERIMENTS_PER_TARGET)
         ]
 
     # --- Execução e Análise ---
-    manager = ParallelExperimentManager(configs=experiment_configs, max_processes=2)
+    manager = ParallelExperimentManager(configs=experiment_configs, max_processes=1)
     all_results = manager.run_all()
 
     print("\n--- Resumo dos Resultados ---")

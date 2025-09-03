@@ -31,6 +31,9 @@ class GateFactory:
         3: [RCCXGate],
         4: [RC3XGate]
     }
+    _gate_name_map: Dict[str, Type[QiskitGate]] = {
+        cls.__name__: cls for _, gate_list in _gate_class_map.items() for cls in gate_list
+    }
     _inverses_class = [SGate, SXGate, TGate, DCXGate]
     _gate_without_control = [IGate]
 
@@ -56,6 +59,28 @@ class GateFactory:
             steps_sizes=steps_sizes,
             extra_controls=extra_controls,
             is_inverse=is_inverse
+        )
+
+    def create_from_dict(self, data: dict) -> Gate:
+        """
+        Reconstrói uma entidade Gate a partir de um dicionário (proveniente de um JSON).
+        """
+        gate_name = data.get("gate_class_name")
+        gate_class = self._gate_name_map.get(gate_name)
+
+        if not gate_class:
+            raise ValueError(f"Gate '{gate_name}' desconhecido. Não é possível reconstruir o circuito.")
+
+        steps_sizes_dict = data.get("step_sizes")
+        steps_sizes = [StepSize(**step_size) for step_size in steps_sizes_dict] if steps_sizes_dict else None
+
+        return Gate(
+            gate_class=gate_class,
+            qubits=data.get("qubits"),
+            parameters=data.get("parameters"),
+            steps_sizes=steps_sizes,
+            extra_controls=data.get("extra_controls"),
+            is_inverse=data.get("is_inverse")
         )
 
     @classmethod

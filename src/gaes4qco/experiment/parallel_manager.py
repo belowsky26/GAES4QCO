@@ -1,8 +1,10 @@
 import time
+from dataclasses import asdict
 from multiprocessing import Pool, cpu_count
 from typing import List
+
+from containers import ExperimentContainer
 from .config import ExperimentConfig
-from .runner import run_experiment_from_config  # Importa a função standalone
 
 
 class ParallelExperimentManager:
@@ -29,3 +31,17 @@ class ParallelExperimentManager:
         print(f"--- Fim de todos os experimentos | Duração Total: {total_duration:.2f}s ---")
 
         return results
+
+
+def run_experiment_from_config(config: ExperimentConfig) -> dict:
+    """
+    Cria uma instância do container, configura-o e usa-o para
+    construir e executar um ExperimentRunner.
+    """
+    config_dict = asdict(config)
+    experiment_container = ExperimentContainer()
+    experiment_container.config.from_dict(config_dict)
+
+    # 3. Pede ao container para construir o runner. Ele resolverá todas as dependências.
+    runner = experiment_container.runner()
+    return runner.run()

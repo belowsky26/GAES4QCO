@@ -46,7 +46,7 @@ class TournamentSelection(ISelectionStrategy):
         """
 
         # Ordena a população pelo fitness em ordem decrescente
-        sorted_population = sorted(individuals, key=lambda ind: ind.fitness, reverse=True)
+        sorted_population = sorted(individuals, key=lambda ind: ind.fidelity, reverse=True)
 
         # 1. Elitismo: Separa os melhores indivíduos
         elites = sorted_population[:self.elitism_count]

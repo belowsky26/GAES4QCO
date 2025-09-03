@@ -1,6 +1,7 @@
 from dependency_injector import containers, providers
 from qiskit.quantum_info import Statevector
 
+from experiment import checkpoint, runner
 from quantum_circuit import qiskit_adapter, circuit_factory, gate_factory
 from evolutionary_algorithm import selection, crossover, mutation, population_factory, rate_adapter
 from optimization import fitness, observer, optimizer, fitness_shaper
@@ -14,8 +15,7 @@ class QuantumCircuitContainer(containers.DeclarativeContainer):
     gate_factory = providers.Factory(gate_factory.GateFactory)
     circuit_factory = providers.Factory(
         circuit_factory.CircuitFactory,
-        gate_factory=gate_factory,
-        use_evolutionary_strategy=config.evolution.stepsize
+        gate_factory=gate_factory
     )
 
 
@@ -160,6 +160,8 @@ class AppContainer(containers.DeclarativeContainer):
     """
     config = providers.Configuration()
 
+    # O CheckpointManager depende da configuração do experimento
+
     # --- Agregação dos Sub-Containers ---
 
     # 1. Componentes de Circuito Quântico (sem dependências externas)
@@ -182,9 +184,15 @@ class AppContainer(containers.DeclarativeContainer):
         factories=circuit,
         optimization=optimization
     )
-    population = providers.Factory(
+    population_fac = providers.Factory(
         population_factory.PopulationFactory,
         circuit_factory=circuit.circuit_factory
+    )
+
+    checkpoint_manager = providers.Factory(
+        checkpoint.CheckpointManager,
+        config=config.experiment,
+        population_factory=population_fac
     )
 
     # 4. Montagem do Optimizer Principal (componente de mais alto nível)
@@ -195,10 +203,22 @@ class AppContainer(containers.DeclarativeContainer):
         survivor_selection=evolutionary_algorithm.survivor_selector,
         crossover=evolutionary_algorithm.crossover_strategy,
         mutation=evolutionary_algorithm.mutation_selector,
-        population_factory=population,
+        population_factory=population_fac,
         rate_adapter=evolutionary_algorithm.rate_adapter,
         diversity_threshold=config.evolution.diversity_threshold,
         injection_rate=config.evolution.injection_rate,
         fitness_shaper=optimization.shaper,
-        observer=optimization.observer,
+        observer=optimization.observer
+    )
+
+
+class ExperimentContainer(containers.DeclarativeContainer):
+    """Sub-container para os componentes da feature experiment."""
+    config = providers.Configuration()
+
+    # O ExperimentRunner depende do container principal e da configuração
+    runner = providers.Factory(
+        runner.ExperimentRunner,
+        config=config,
+        container=AppContainer
     )

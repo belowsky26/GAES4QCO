@@ -1,15 +1,11 @@
 import random
 import time
 import json
-from dataclasses import asdict
 from pathlib import Path
 from typing import List
 
 import numpy as np
-from dependency_injector import providers
-from qiskit.quantum_info import Statevector
 
-from containers import AppContainer
 from evolutionary_algorithm.population import Population
 from quantum_circuit.circuit import Circuit
 from quantum_circuit.interfaces import IQuantumCircuitAdapter
@@ -19,7 +15,6 @@ from .config import ExperimentConfig, PhaseConfig
 def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, filepath_base: str):
     """Salva a estrutura de um circuito em .json e sua representação em .txt."""
     print(f"Salvando detalhes do circuito em '{filepath_base}.json/.txt'...")
-    Path(filepath_base).parent.mkdir(parents=True, exist_ok=True)
 
     with open(f"{filepath_base}.json", 'w', encoding='utf-8') as f:
         json.dump(circuit.to_dict(), f, indent=4)
@@ -28,10 +23,14 @@ def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, file
         f.write(str(qiskit_circuit.draw('text')))
 
 
-def save_final_population(circuits: List[Circuit], adapter: IQuantumCircuitAdapter, results_filepath: str):
+def circuits_folder_path(config_file_path: Path) -> Path:
+    return Path(str(config_file_path).replace("_config.json", "_circuits"))
+
+
+def save_final_population(circuits: List[Circuit], adapter: IQuantumCircuitAdapter, config_file_path: Path):
     """Salva uma lista de circuitos em uma subpasta dedicada."""
     # Cria um nome de pasta baseado no arquivo de resultado, ex: ".../s1111_h_abc_final_circuits/"
-    folder_path = Path(results_filepath.replace('.json', '_final_circuits'))
+    folder_path = circuits_folder_path(config_file_path)
     folder_path.mkdir(parents=True, exist_ok=True)
 
     print(f"Salvando {len(circuits)} circuitos finais em '{folder_path}'...")
@@ -49,11 +48,12 @@ def save_final_population(circuits: List[Circuit], adapter: IQuantumCircuitAdapt
 class ExperimentRunner:
     """Executa uma única instância completa de um experimento do GA."""
 
-    def __init__(self, config: ExperimentConfig):
-        self.config = config
-        self.container = AppContainer()
+    def __init__(self, config: dict, container):
+        self.config = ExperimentConfig(**config)
+        self.config.phases = [PhaseConfig(**phase) for phase in config["phases"]]
+        self.container = container()
 
-    def _configure_container_for_phase(self, phase_config: PhaseConfig):
+    def _configure_container_for_phase(self, phase_config: PhaseConfig, observer_filename: str):
         """Configura o container com os parâmetros de uma fase específica."""
         self.container.config.from_dict({
             "quantum": {
@@ -90,7 +90,7 @@ class ExperimentRunner:
                 "alpha": self.config.alpha
             },
             "observer": {
-                "filename": self.config.results_filename
+                "filename": observer_filename
             }
         })
 
@@ -101,36 +101,43 @@ class ExperimentRunner:
         print(f"---   Iniciando Experimento com Seed {self.config.seed}   ---")
         start_time = time.time()
 
-        config_filepath = self.config.results_filename.replace('.json', '_config.json')
-        print(f"Salvando configuração do experimento em: {config_filepath}")
-        Path(config_filepath).parent.mkdir(parents=True, exist_ok=True)
-        with open(config_filepath, 'w', encoding='utf-8') as f:
-            json.dump(self.config.to_dict(), f, indent=4)
-
         random.seed(self.config.seed)
         np.random.seed(self.config.seed)
 
         population: Population = Population()
-        for i, phase in enumerate(self.config.phases):
-            self._configure_container_for_phase(phase)
-            if i == 0:
-                pop_factory = self.container.population()
-                population = pop_factory.create(
-                    population_size=self.config.population_size,
-                    num_qubits=self.config.num_qubits,
-                    max_depth=self.config.max_depth,
-                    min_depth=self.config.min_depth
-                )
-
+        for i, (phase, config_file_path_str) in enumerate(zip(self.config.phases, self.config.config_file_path)):
             print(f"\n--- FASE {i} ---")
+            config_file_path = Path(config_file_path_str)
+            print(f"Salvando configuração do experimento em: {config_file_path}")
+            Path(config_file_path).parent.mkdir(parents=True, exist_ok=True)
+            with open(config_file_path, 'w', encoding='utf-8') as f:
+                json.dump(self.config.to_dict(), f, indent=4)
+            results_file_path = str(config_file_path).replace("_config.json", "_results.json")
+            self._configure_container_for_phase(phase, results_file_path)
+
+            if self.config.resume_from_checkpoint:
+                checkpoint_manager = self.container.checkpoint_manager()
+                population = checkpoint_manager.load_phase_checkpoint(Path(circuits_folder_path(config_file_path)))
+                if population.get_individuals():
+                    continue
+
+            pop_factory = self.container.population_fac()
+            population = pop_factory.create(
+                population_size=self.config.population_size,
+                num_qubits=self.config.num_qubits,
+                max_depth=self.config.max_depth,
+                min_depth=self.config.min_depth,
+                use_evolutionary_strategy=phase.use_stepsize
+            )
+
             optimizer = self.container.optimizer()
             population = optimizer.run(population, phase.generations, phase.fidelity_threshold_stop)
 
-        print("Optimization finished.")
-        final_circuits = population.get_individuals()
+            print("Optimization finished.")
+            final_circuits = population.get_individuals()
 
-        adapter = self.container.circuit.qiskit_adapter()
-        save_final_population(final_circuits, adapter, self.config.results_filename)
+            adapter = self.container.circuit.qiskit_adapter()
+            save_final_population(final_circuits, adapter, config_file_path)
 
         end_time = time.time()
         duration = end_time - start_time
@@ -142,8 +149,3 @@ class ExperimentRunner:
             "best_fitness": best_circuit.fitness,
             "duration_seconds": duration
         }
-
-
-def run_experiment_from_config(config: ExperimentConfig) -> dict:
-    runner = ExperimentRunner(config)
-    return runner.run()
