@@ -117,18 +117,19 @@ class ExperimentRunner:
 
             if self.config.resume_from_checkpoint:
                 checkpoint_manager = self.container.checkpoint_manager()
-                population = checkpoint_manager.load_phase_checkpoint(Path(circuits_folder_path(config_file_path)))
-                if population.get_individuals():
+                population_temp = checkpoint_manager.load_phase_checkpoint(Path(circuits_folder_path(config_file_path)))
+                if population_temp.get_individuals():
+                    population = population_temp
                     continue
-
-            pop_factory = self.container.population_fac()
-            population = pop_factory.create(
-                population_size=self.config.population_size,
-                num_qubits=self.config.num_qubits,
-                max_depth=self.config.max_depth,
-                min_depth=self.config.min_depth,
-                use_evolutionary_strategy=phase.use_stepsize
-            )
+            if not population.get_individuals():
+                pop_factory = self.container.population_fac()
+                population = pop_factory.create(
+                    population_size=self.config.population_size,
+                    num_qubits=self.config.num_qubits,
+                    max_depth=self.config.max_depth,
+                    min_depth=self.config.min_depth,
+                    use_evolutionary_strategy=phase.use_stepsize
+                )
 
             optimizer = self.container.optimizer()
             population = optimizer.run(population, phase.generations, phase.fidelity_threshold_stop)

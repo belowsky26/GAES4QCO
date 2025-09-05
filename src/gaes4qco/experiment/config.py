@@ -56,8 +56,9 @@ class ExperimentConfig:
             rate_flag = "A" if phase.use_adaptive_rates else "F"  # Adaptive vs Fixed
             mut_flag = "B" if phase.use_bandit_mutation else "R"  # Bandit vs Random
             step_flag = "T" if phase.use_stepsize else "F"  # True vs False
-            select_survivor_flag = "N" if phase.use_nsga2_survivor_selection else "T"
-            yield f"pha={i}_fit={fit_flag}_rates={rate_flag}_mut={mut_flag}_step={step_flag}_selectsurvior={select_survivor_flag}"
+            select_survivor_flag = "N" if phase.use_nsga2_survivor_selection else "T"  # Nsga2 vs Tournament
+            fit_shaper_flag = "F" if phase.use_fitness_sharing else "N"  # Fitness Sharing Shaper vs Null Fitness Shaper
+            yield f"pha={i}_{fit_flag}{rate_flag}{mut_flag}{step_flag}{select_survivor_flag}{fit_shaper_flag}"
 
     def get_config_hash(self) -> Generator[str, Any, None]:
         """
@@ -71,7 +72,7 @@ class ExperimentConfig:
             data_final["phases"] = data_final["phases"][:i]
             canonical_string = json.dumps(data_final, sort_keys=True, separators=(",", ":"), default=lambda o: o.__dict__)
             hasher = hashlib.sha256(canonical_string.encode("utf-8"))
-            yield hasher.hexdigest()[:15]
+            yield hasher.hexdigest()[:8]
 
     @property
     def config_file_path(self) -> Generator[str, Any, None]:

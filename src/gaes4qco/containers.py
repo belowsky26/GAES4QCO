@@ -82,7 +82,8 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
         # Opção para o NSGA-II (multiobjetivo)
         nsga2=providers.Factory(
             selection.NSGA2Selection,
-            population_size=config.evolution.population_size
+            population_size=config.evolution.population_size,
+            elitism_count=config.evolution.elitism_size
         ),
         # Opção padrão para o torneio (single-objective)
         default=providers.Factory(

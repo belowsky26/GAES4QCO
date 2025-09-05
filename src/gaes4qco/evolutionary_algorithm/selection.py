@@ -81,14 +81,15 @@ class NSGA2Selection(ISelectionStrategy):
     para otimização multiobjetivo.
     """
 
-    def __init__(self, population_size: int):
+    def __init__(self, population_size: int, elitism_count: int):
         self.population_size = population_size
+        self.elitism_count = max(elitism_count, 1)
 
     def select(self, population: Population) -> Population:
         individuals = population.get_individuals()
-        fronts = self._non_dominated_sort(individuals)
-
-        next_gen_individuals = []
+        sorted_population = sorted(individuals, key=lambda ind: ind.fidelity, reverse=True)
+        fronts = self._non_dominated_sort(sorted_population[self.elitism_count:])
+        next_gen_individuals = sorted_population[:self.elitism_count]
         for front in fronts:
             if len(next_gen_individuals) + len(front) <= self.population_size:
                 next_gen_individuals.extend(front)
