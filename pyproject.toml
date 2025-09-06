@@ -6,7 +6,9 @@ authors = []
 dependencies = [
     "qiskit",
     "numpy",
-    "dependency-injector"
+    "dependency-injector",
+    "qiskit-aer",
+    "qiskit-ibm-provider"
 ]
 readme = "README.md"
 requires-python = ">=3.9 "

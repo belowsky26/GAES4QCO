@@ -1,16 +1,19 @@
 from dependency_injector import containers, providers
 from qiskit.quantum_info import Statevector
+from qiskit_aer.noise import NoiseModel  # Importe o NoiseModel
+from qiskit_aer import AerSimulator
+from qiskit.providers.fake_provider.generic_backend_v2 import GenericBackendV2  # Exemplo de um backend simulado
+
 
 from experiment import checkpoint, runner
-from quantum_circuit import qiskit_adapter, circuit_factory, gate_factory
+from quantum_circuit import qiskit_adapter, circuit_factory, gate_factory, executor as quantum_executor
 from evolutionary_algorithm import selection, crossover, mutation, population_factory, rate_adapter
 from optimization import fitness, observer, optimizer, fitness_shaper
+from analysis import error_analyzer
 
 
 class QuantumCircuitContainer(containers.DeclarativeContainer):
     """Sub-container para os componentes da feature quantum_circuit."""
-    config = providers.Configuration()
-
     qiskit_adapter = providers.Factory(qiskit_adapter.QiskitAdapter)
     gate_factory = providers.Factory(gate_factory.GateFactory)
     circuit_factory = providers.Factory(
@@ -168,7 +171,6 @@ class AppContainer(containers.DeclarativeContainer):
     # 1. Componentes de Circuito Quântico (sem dependências externas)
     circuit = providers.Container(
         QuantumCircuitContainer,
-        config=config
     )
 
     # 2. Componentes de Otimização (dependem do container de circuito)
@@ -210,6 +212,34 @@ class AppContainer(containers.DeclarativeContainer):
         injection_rate=config.evolution.injection_rate,
         fitness_shaper=optimization.shaper,
         observer=optimization.observer
+    )
+
+    noisy_backend = providers.Factory(
+        AerSimulator
+    )
+
+    generic_backend = providers.Factory(
+        GenericBackendV2,
+        num_qubits=config.num_qubits,
+    )
+
+    noisy_backend_1 = providers.Factory(
+        AerSimulator.from_backend,
+        # Usamos um backend falso para obter um modelo de ruído realista
+        backend=generic_backend
+    )
+
+    # Provider para o Executor
+    quantum_executor = providers.Factory(
+        quantum_executor.QiskitExecutor,
+        adapter=circuit.qiskit_adapter,
+        backend=noisy_backend
+    )
+
+    # Provider para o Analisador de Erro
+    error_analyzer = providers.Factory(
+        error_analyzer.ErrorAnalyzer,
+        executor=quantum_executor
     )
 
 

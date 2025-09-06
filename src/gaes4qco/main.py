@@ -59,7 +59,7 @@ def main():
     # --- Configuração Geral dos Experimentos ---
     NUM_QUBITS = 4
     DEPTH_GEN_TARGET = 20
-    NUM_TARGETS = 1  # Quantidade de Targets criados
+    NUM_TARGETS = 10  # Quantidade de Targets criados
     NUM_EXPERIMENTS_PER_TARGET = 1  # Quantidade de Experimentos por Target
     INITIAL_SEED_TARGETS = 101  # Semente Inicial para gerar os circuitos alvos
     INITIAL_SEED_EXPERIMENTS = 1  # Semente inicial para as execuções do GA
@@ -76,19 +76,46 @@ def main():
         target_sv_data = target.data.tolist()
 
         # --- Definição da Lista de Configurações para o Lote ---
-        phases = [
+        ffrftn_phase = [
             PhaseConfig(
-                generations=600,
-                fidelity_threshold_stop=0.99,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                generations=1000,
+                use_stepsize=False,  # True: Aumenta em até 30% o tempo
                 use_weighted_fitness=False,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_adaptive_rates=False,
                 use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
                 use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=False  # True aumenta tempo de execução
-            ),
+                use_fitness_sharing=False,  # True aumenta tempo de execução
+                fidelity_threshold_stop=None
+            )
+        ]
+
+        farttn_phase = [PhaseConfig(
+                generations=g,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=False,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=False,  # True aumenta tempo de execução
+                fidelity_threshold_stop=None
+            ) for g in [400, 100, 100, 400]
+        ]
+        warttn_phase = [
             PhaseConfig(
                 generations=50,
+                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                use_weighted_fitness=True,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,
+                # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=False,  # True aumenta tempo de execução
+                fidelity_threshold_stop=None
+            )
+        ]
+        fartts_phase = [
+            PhaseConfig(
+                generations=100,
                 use_stepsize=True,  # True: Aumenta em até 30% o tempo
                 use_weighted_fitness=False,  # Não afeta quase nada ~8%
                 use_adaptive_rates=True,
@@ -96,7 +123,9 @@ def main():
                 use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
                 use_fitness_sharing=True,  # True aumenta tempo de execução
                 fidelity_threshold_stop=None
-            ),
+            )
+        ]
+        fartnt_phase = [
             PhaseConfig(
                 generations=250,
                 use_stepsize=True,  # True: Aumenta em até 30% o tempo
@@ -108,30 +137,8 @@ def main():
                 fidelity_threshold_stop=None
             )
         ]
-        phases = [
-            PhaseConfig(
-                generations=2,
-                fidelity_threshold_stop=0.99,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=False,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,
-                # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=False  # True aumenta tempo de execução
-            ),
-            PhaseConfig(
-                generations=2,
-                fidelity_threshold_stop=None,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=True,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,
-                # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=False  # True aumenta tempo de execução
-            )
-        ]
+        phases = farttn_phase + warttn_phase + fartts_phase + fartnt_phase
+        phases = ffrftn_phase
         experiment_configs += [
             ExperimentConfig(
                 seed=s,
@@ -146,7 +153,7 @@ def main():
         ]
 
     # --- Execução e Análise ---
-    manager = ParallelExperimentManager(configs=experiment_configs, max_processes=1)
+    manager = ParallelExperimentManager(configs=experiment_configs, max_processes=NUM_EXPERIMENTS_PER_TARGET * NUM_TARGETS)
     all_results = manager.run_all()
 
     print("\n--- Resumo dos Resultados ---")

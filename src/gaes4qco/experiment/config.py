@@ -36,13 +36,13 @@ class ExperimentConfig:
     elitism_size: int = 10
     population_size: int = 200
     tournament_size: int = 2
-    crossover_rate: float = 0.6  # Para FixedCrossover
+    crossover_rate: float = 0.8  # Para FixedCrossover
     mutation_rate: float = 0.3  # Para FixedMutation
     min_mutation_rate: float = 0.2
     max_mutation_rate: float = 0.5
     min_crossover_rate: float = 0.6
     max_crossover_rate: float = 0.95
-    diversity_threshold: float = 0.15  # Limiar de 10%
+    diversity_threshold: float = -1  # Limiar de 10%
     injection_rate: float = 0.15  # Injeta 90% quando ativado
     sharing_radius: float = 0.4
     alpha: float = 1.0

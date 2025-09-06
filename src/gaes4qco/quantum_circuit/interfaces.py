@@ -1,6 +1,9 @@
 from abc import ABC, abstractmethod
-from qiskit.circuit import QuantumCircuit as QiskitCircuit # ## Tipo de retorno do Qiskit
-from .circuit import Circuit # ## Nossa entidade de domínio
+from typing import Dict
+
+from qiskit.circuit import QuantumCircuit as QiskitCircuit
+from .circuit import Circuit
+
 
 class IQuantumCircuitAdapter(ABC):
     """
@@ -10,4 +13,15 @@ class IQuantumCircuitAdapter(ABC):
     @abstractmethod
     def from_domain(self, circuit: Circuit) -> QiskitCircuit:
         """Converte nossa entidade Circuit para um objeto do backend (Qiskit)."""
+        pass
+
+
+class IQuantumExecutor(ABC):
+    """Interface para classes que executam um circuito quântico e retornam os resultados."""
+    @abstractmethod
+    def execute(self, circuit: Circuit, shots: int, measure: bool) -> Dict[str, int]:
+        """
+        Executa um circuito por um número de 'shots' (medições) e retorna
+        a contagem de resultados (ex: {'001': 512, '101': 488}).
+        """
         pass
