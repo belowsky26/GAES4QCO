@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List
 
 
@@ -30,3 +31,12 @@ class StepSize:
             "history": self.history,
             "mean": self.mean,
         }
+
+
+class CrossoverType(str, Enum):
+    """Define os tipos de estratégias de crossover disponíveis."""
+    MULTI_POINT = "multipoint"
+    SINGLE_POINT = "singlepoint"
+    BLOCKWISE = "blockwise"
+    # Adicionando um para o futuro seletor adaptativo
+    ADAPTIVE_BANDIT = "bandit"

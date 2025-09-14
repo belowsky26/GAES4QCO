@@ -4,7 +4,7 @@ from evolutionary_algorithm.population_factory import PopulationFactory
 from evolutionary_algorithm.selection import NSGA2Selection
 from quantum_circuit.circuit import Circuit
 from evolutionary_algorithm.interfaces import (
-    ISelectionStrategy, ICrossoverStrategy, IMutationPopulation
+    ISelectionStrategy, ICrossoverStrategy, IMutationPopulation, IPopulationCrossover
 )
 from evolutionary_algorithm.population import Population
 from evolutionary_algorithm.rate_adapter import IRateAdapter
@@ -22,7 +22,7 @@ class Optimizer:
             fitness_evaluator: IFitnessEvaluator,
             parent_selection: ISelectionStrategy,
             survivor_selection: ISelectionStrategy,
-            crossover: ICrossoverStrategy,
+            crossover: IPopulationCrossover,
             mutation: IMutationPopulation,
             population_factory: PopulationFactory,
             rate_adapter: IRateAdapter,
@@ -72,7 +72,7 @@ class Optimizer:
             parent_population = self._parent_selection.select(current_population)
 
             # 2. Cruzamento
-            offspring_population = self._crossover.crossover(parent_population)
+            offspring_population = self._crossover.run(parent_population)
 
             # 3. Mistura a antiga população com a nova, evitando duplicatas
             offspring_population = Population(offspring_population.get_individuals() + current_population.get_individuals())

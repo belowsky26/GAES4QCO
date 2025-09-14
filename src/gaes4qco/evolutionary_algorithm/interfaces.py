@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Tuple
 
 from quantum_circuit.circuit import Circuit
 from .population import Population           # Importamos nossa classe Population
@@ -15,12 +16,17 @@ class ISelectionStrategy(ABC):
         pass
 
 
+class IPopulationCrossover(ABC):
+    def run(self, population: Population) -> Population:
+        pass
+
+
 class ICrossoverStrategy(ABC):
     """
     ## Interface para estratégias de cruzamento.
     """
     @abstractmethod
-    def crossover(self, parent_population: Population) -> Population:
+    def crossover(self, parent_1: Circuit, parent_2: Circuit) -> Tuple[Circuit, Circuit]:
         """
         ## Recebe uma população de pais e retorna uma nova população de filhos.
         """

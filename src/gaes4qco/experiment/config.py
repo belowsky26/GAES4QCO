@@ -4,6 +4,8 @@ from pathlib import Path
 import json
 import hashlib
 
+from shared.value_objects import CrossoverType
+
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -16,6 +18,7 @@ class PhaseConfig:
     use_bandit_mutation: bool
     use_nsga2_survivor_selection: bool
     use_fitness_sharing: bool
+    crossover_strategy: CrossoverType
     generations: int
     # Condição de parada opcional para a fase
     fidelity_threshold_stop: Optional[float]

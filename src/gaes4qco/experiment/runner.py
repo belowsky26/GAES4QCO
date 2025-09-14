@@ -54,7 +54,6 @@ class ExperimentRunner:
         self.container = container()
 
     def _configure_container_for_phase(self, phase_config: PhaseConfig, observer_filename: str):
-        """Configura o container com os parâmetros de uma fase específica."""
         self.container.config.from_dict({
             "quantum": {
                 "target_statevector_data": self.config.target_statevector_data,
@@ -67,6 +66,7 @@ class ExperimentRunner:
                 "rate_adapter": "adaptive" if phase_config.use_adaptive_rates else "default",
                 "mutation": "bandit" if phase_config.use_bandit_mutation else "default",
                 "survivor": "nsga2" if phase_config.use_nsga2_survivor_selection else "default",
+                "crossover": phase_config.crossover_strategy
             },
             "evolution": {
                 "population_size": self.config.population_size,
@@ -77,7 +77,7 @@ class ExperimentRunner:
                 "max_depth": self.config.max_depth,
                 "diversity_threshold": self.config.diversity_threshold,
                 "injection_rate": self.config.injection_rate,
-                "stepsize": phase_config.use_stepsize,
+                "stepsize": phase_config.use_stepsize
             },
             "adaptive_rates": {
                 "min_mutation_rate": self.config.min_mutation_rate,
@@ -93,6 +93,7 @@ class ExperimentRunner:
                 "filename": observer_filename
             }
         })
+        """Configura o container com os parâmetros de uma fase específica."""
 
     def run(self) -> dict:
         """

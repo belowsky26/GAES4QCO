@@ -98,9 +98,26 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
         ),
     )
 
+    singlepoint_crossover = providers.Factory(
+        crossover.SinglePointCrossover
+    )
+    multipoint_crossover = providers.Factory(
+        crossover.MultiPointCrossover
+    )
+    blockwise_crossover = providers.Factory(
+        crossover.BlockwiseCrossover
+    )
+    crossover_strategy_selector = providers.Selector(
+        config.selection_strategy.crossover,
+        singlepoint=singlepoint_crossover,
+        multipoint=multipoint_crossover,
+        blockwise=blockwise_crossover,
+    )
+
     # --- Estratégia de Crossover ---
-    crossover_strategy = providers.Factory(
-        crossover.UniformCrossover,
+    crossover_population = providers.Factory(
+        crossover.PopulationCrossover,
+        crossover_strategy=crossover_strategy_selector,
         crossover_rate=config.evolution.crossover_rate
     )
 
@@ -204,7 +221,7 @@ class AppContainer(containers.DeclarativeContainer):
         fitness_evaluator=optimization.evaluator,
         parent_selection=evolutionary_algorithm.parent_selector,
         survivor_selection=evolutionary_algorithm.survivor_selector,
-        crossover=evolutionary_algorithm.crossover_strategy,
+        crossover=evolutionary_algorithm.crossover_population,
         mutation=evolutionary_algorithm.mutation_selector,
         population_factory=population_fac,
         rate_adapter=evolutionary_algorithm.rate_adapter,
