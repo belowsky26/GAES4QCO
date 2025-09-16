@@ -20,7 +20,6 @@ class PhaseConfig:
     use_fitness_sharing: bool
     crossover_strategy: CrossoverType
     generations: int
-    # Condição de parada opcional para a fase
     fidelity_threshold_stop: Optional[float]
 
 
@@ -35,6 +34,7 @@ class ExperimentConfig:
     filename_target_circuit: str
     phases: List[PhaseConfig]
     resume_from_checkpoint: bool
+    allowed_gates: Optional[List[str]] = None
     num_qubits: int = 4
     elitism_size: int = 10
     population_size: int = 200
@@ -61,6 +61,7 @@ class ExperimentConfig:
             step_flag = "T" if phase.use_stepsize else "F"  # True vs False
             select_survivor_flag = "N" if phase.use_nsga2_survivor_selection else "T"  # Nsga2 vs Tournament
             fit_shaper_flag = "F" if phase.use_fitness_sharing else "N"  # Fitness Sharing Shaper vs Null Fitness Shaper
+            crossover_flag = phase.crossover_strategy[0]
             yield f"pha={i}_{fit_flag}{rate_flag}{mut_flag}{step_flag}{select_survivor_flag}{fit_shaper_flag}"
 
     def get_config_hash(self) -> Generator[str, Any, None]:

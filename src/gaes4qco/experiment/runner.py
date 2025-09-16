@@ -58,7 +58,8 @@ class ExperimentRunner:
             "quantum": {
                 "target_statevector_data": self.config.target_statevector_data,
                 "num_qubits": self.config.num_qubits,
-                "target_depth": self.config.target_depth
+                "target_depth": self.config.target_depth,
+                "allowed_gates": self.config.allowed_gates
             },
             "selection_strategy": {
                 "fitness": "weighted" if phase_config.use_weighted_fitness else "default",

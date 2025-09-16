@@ -16,7 +16,7 @@ def main():
     """
     # --- Configuração ---
     CIRCUIT_TO_TEST_PATH = r"D:\Estudos\Projeto\GAES4QCO\results\target_circuits\target_seed_101.json"
-    circuit_optimized_path = r"D:\Estudos\Projeto\GAES4QCO\results\pha=0_FFRFTN\30a107a7_circuits\rank_005_fit_0.9744_depth_18.json"
+    circuit_optimized_path = r"D:\Estudos\Projeto\GAES4QCO\results\target_circuits\target_seed_101.json"
     SHOTS = 2**20
     container = AppContainer()
     container.config.from_dict({

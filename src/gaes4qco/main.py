@@ -2,7 +2,7 @@ import json
 import numpy as np
 import random
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from qiskit.quantum_info import Statevector
 
 from containers import AppContainer, QuantumCircuitContainer
@@ -27,7 +27,7 @@ def save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, file
         f.write(str(qiskit_circuit.draw('text')))
 
 
-def create_random_target(num_qubits: int, depth: int, seed: int) -> Tuple[Statevector, str]:
+def create_random_target(num_qubits: int, depth: int, seed: int, allowed_gates: Optional[List[str]] = None) -> Tuple[Statevector, str]:
     """
     Usa factories para gerar um circuito aleatório, salvá-lo e
     retornar seu statevector e o objeto de domínio.
@@ -37,6 +37,7 @@ def create_random_target(num_qubits: int, depth: int, seed: int) -> Tuple[Statev
     np.random.seed(seed)
 
     circuit_container = QuantumCircuitContainer()
+    circuit_container.config.from_dict({"quantum": {"allowed_gates": allowed_gates}})
 
     # ## CORREÇÃO AQUI: Acessando os providers através dos sub-containers ##
     circuit_factory = circuit_container.circuit_factory()
@@ -65,11 +66,11 @@ def main():
     NUM_EXPERIMENTS_PER_TARGET = 1  # Quantidade de Experimentos por Target
     INITIAL_SEED_TARGETS = 101  # Semente Inicial para gerar os circuitos alvos
     INITIAL_SEED_EXPERIMENTS = 1  # Semente inicial para as execuções do GA
-
+    ALLOWED_GATES = None # ["IGate", "RZGate", "SXGate", "XGate", "CXGate"]
     # --- Criação dos Alvos para os Experimentos ---
     targets_svs_filename = [
         create_random_target(
-            num_qubits=NUM_QUBITS, depth=DEPTH_GEN_TARGET, seed=s
+            num_qubits=NUM_QUBITS, depth=DEPTH_GEN_TARGET, seed=s, allowed_gates=ALLOWED_GATES
         ) for s in range(INITIAL_SEED_TARGETS, INITIAL_SEED_TARGETS + NUM_TARGETS)
     ]
 
@@ -89,7 +90,7 @@ def main():
                 use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
                 use_fitness_sharing=False,  # True aumenta tempo de execução
                 crossover_strategy=CrossoverType.MULTI_POINT,
-                fidelity_threshold_stop=None
+                fidelity_threshold_stop=None,
             )
         ]
         farttn_phase = [PhaseConfig(
@@ -155,7 +156,8 @@ def main():
                 target_depth=20,
                 target_statevector_data=target_sv_data,
                 filename_target_circuit=filename,
-                resume_from_checkpoint=True
+                resume_from_checkpoint=True,
+                allowed_gates=ALLOWED_GATES
             ) for s in range(INITIAL_SEED_EXPERIMENTS, INITIAL_SEED_EXPERIMENTS + NUM_EXPERIMENTS_PER_TARGET)
         ]
 

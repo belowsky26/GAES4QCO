@@ -1,6 +1,6 @@
 import random
 from inspect import Parameter, signature
-from typing import Type, List, Dict, Tuple
+from typing import Type, List, Dict, Tuple, Optional
 
 from numpy import pi as PI
 from qiskit.circuit import Gate as QiskitGate
@@ -8,7 +8,8 @@ from qiskit.circuit.library.standard_gates import (
     XGate, YGate, ZGate, HGate, PhaseGate, SwapGate, UGate, RXGate,
     RYGate, RZGate, SGate, SXGate, TGate, IGate, RGate, RXXGate,
     RYYGate, RZXGate, RZZGate, DCXGate, ECRGate,
-    RCCXGate, RC3XGate, XXMinusYYGate, XXPlusYYGate
+    RCCXGate, RC3XGate, XXMinusYYGate, XXPlusYYGate,
+    CXGate
 )
 
 # Imports atualizados para a nova arquitetura
@@ -21,21 +22,38 @@ class GateFactory:
     Cria uma entidade 'Gate' de forma aleatória,
     encapsulando as regras de seleção e parametrização.
     """
+    def __init__(self, allowed_gates: Optional[List[str]] = None):
+        """
+        :param allowed_gates: Lista de nomes de gates permitidas.
+        Se None, todas as gates do _gate_class_map serão usadas.
+        """
+        self._allowed_gates = set(allowed_gates) if allowed_gates else None
 
-    # O mapa de gates é um detalhe de implementação da fábrica.
-    _gate_class_map: Dict[int, List[Type[QiskitGate]]] = {
-        1: [XGate, YGate, ZGate, HGate, SGate, TGate, IGate, SXGate,
-            UGate, PhaseGate, RGate, RXGate, RYGate, RZGate],
-        2: [SwapGate, RXXGate, RYYGate, RZZGate, RZXGate,
-            DCXGate, ECRGate, XXMinusYYGate, XXPlusYYGate],
-        3: [RCCXGate],
-        4: [RC3XGate]
-    }
-    _gate_name_map: Dict[str, Type[QiskitGate]] = {
-        cls.__name__: cls for _, gate_list in _gate_class_map.items() for cls in gate_list
-    }
-    _inverses_class = [SGate, SXGate, TGate, DCXGate]
-    _gate_without_control = [IGate]
+        # O mapa de gates é um detalhe de implementação da fábrica.
+        gate_class_map: Dict[int, List[Type[QiskitGate]]] = {
+            1: [XGate, YGate, ZGate, HGate, SGate, TGate, IGate, SXGate,
+                UGate, PhaseGate, RGate, RXGate, RYGate, RZGate],
+            2: [SwapGate, RXXGate, RYYGate, RZZGate, RZXGate,
+                DCXGate, ECRGate, XXMinusYYGate, XXPlusYYGate,
+                CXGate],
+            3: [RCCXGate],
+            4: [RC3XGate]
+        }
+
+        # Filtra dinamicamente de acordo com allowed_gates
+        self._gate_name_map: Dict[str, Type[QiskitGate]] = {
+            cls.__name__: cls
+            for _, gate_list in gate_class_map.items()
+            for cls in gate_list
+            if (self._allowed_gates is None or cls.__name__ in self._allowed_gates)
+        }
+
+        # Reconstrói o mapa filtrado
+        self._gate_class_map: Dict[int, List[Type[QiskitGate]]] = {}
+        for n, gate_list in gate_class_map.items():
+            filtered = [cls for cls in gate_list if cls.__name__ in self._gate_name_map]
+            if filtered:
+                self._gate_class_map[n] = filtered
 
     def build_gate(self, available_qubits: List[int], use_evolutionary_strategy: bool) -> Gate:
         """
@@ -48,8 +66,7 @@ class GateFactory:
         gate_class, qubits_min = self._choice_gate_class(lim_qubits)
         generated_angles = self._generate_random_params_for_gate(gate_class)
         steps_sizes = [StepSize() for _ in generated_angles] if use_evolutionary_strategy else None
-        chosen_qubits, extra_controls = self._choice_qubits(gate_class, available_qubits, qubits_min)
-        is_inverse = self._choice_inverse_class(gate_class)
+        chosen_qubits, extra_controls = self._choice_qubits(available_qubits, qubits_min)
 
         # Retorna nossa entidade 'Gate', e não 'GateComponent'
         return Gate(
@@ -58,7 +75,7 @@ class GateFactory:
             parameters=generated_angles,
             steps_sizes=steps_sizes,
             extra_controls=extra_controls,
-            is_inverse=is_inverse
+            is_inverse=False
         )
 
     def create_from_dict(self, data: dict) -> Gate:
@@ -83,33 +100,26 @@ class GateFactory:
             is_inverse=data.get("is_inverse")
         )
 
-    @classmethod
-    def _choice_gate_class(cls, lim_qubits: int) -> Tuple[Type[QiskitGate], int]:
+    def _choice_gate_class(self, lim_qubits: int) -> Tuple[Type[QiskitGate], int]:
         candidate_pool = [
             (gate_class, num_qubits)
-            for num_qubits, gate_list in cls._gate_class_map.items()
+            for num_qubits, gate_list in self._gate_class_map.items()
             if num_qubits <= lim_qubits
             for gate_class in gate_list
         ]
         if not candidate_pool:
-            raise ValueError(f"Não há gates disponíveis para {lim_qubits} ou menos qubits.")
+            raise ValueError(
+                f"Não há gates disponíveis para {lim_qubits} qubits "
+                f"com a configuração atual ({self._allowed_gates}"
+            )
         return random.choice(candidate_pool)
 
-    @classmethod
-    def _choice_qubits(cls, gate_class: Type[QiskitGate], qubits: List[int], min_qubits: int) -> Tuple[List[int], int]:
-        lim_qubits = len(qubits)
-        dif_qubits = lim_qubits - min_qubits
+    def _choice_qubits(self, qubits: List[int], min_qubits: int) -> Tuple[List[int], int]:
         extra_controls = 0
-        if gate_class not in cls._gate_without_control and dif_qubits > 0:
-            extra_controls = random.randint(0, dif_qubits)
 
         num_total_qubits = min_qubits + extra_controls
         chosen_qubits = random.sample(qubits, num_total_qubits)
         return chosen_qubits, extra_controls
-
-    @classmethod
-    def _choice_inverse_class(cls, gate_class: Type[QiskitGate]) -> bool:
-        return gate_class in cls._inverses_class and random.choice([False, True])
 
     @classmethod
     def _generate_random_params_for_gate(cls, gate_class: Type[QiskitGate]) -> List[float]:

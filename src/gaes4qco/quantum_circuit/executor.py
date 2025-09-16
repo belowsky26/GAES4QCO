@@ -24,7 +24,7 @@ class QiskitExecutor(IQuantumExecutor):
         # Converte o circuito de domínio para Qiskit
         qiskit_circuit = self._adapter.from_domain(circuit)
         transpiled_circuit = transpile(qiskit_circuit, self._backend)
-
+        print(transpiled_circuit.depth())
         # Se for medir (modo ruidoso)
         if measure:
             transpiled_circuit.measure_all()

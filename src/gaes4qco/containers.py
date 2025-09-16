@@ -14,8 +14,13 @@ from analysis import error_analyzer
 
 class QuantumCircuitContainer(containers.DeclarativeContainer):
     """Sub-container para os componentes da feature quantum_circuit."""
+    config = providers.Configuration()
+
     qiskit_adapter = providers.Factory(qiskit_adapter.QiskitAdapter)
-    gate_factory = providers.Factory(gate_factory.GateFactory)
+    gate_factory = providers.Factory(
+        gate_factory.GateFactory,
+        allowed_gates=config.quantum.allowed_gates
+    )
     circuit_factory = providers.Factory(
         circuit_factory.CircuitFactory,
         gate_factory=gate_factory
@@ -188,6 +193,7 @@ class AppContainer(containers.DeclarativeContainer):
     # 1. Componentes de Circuito Quântico (sem dependências externas)
     circuit = providers.Container(
         QuantumCircuitContainer,
+        config=config
     )
 
     # 2. Componentes de Otimização (dependem do container de circuito)
