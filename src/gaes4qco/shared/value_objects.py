@@ -40,3 +40,4 @@ class CrossoverType(str, Enum):
     BLOCKWISE = "blockwise"
     # Adicionando um para o futuro seletor adaptativo
     ADAPTIVE_BANDIT = "bandit"
+    RANDOM = "random"
