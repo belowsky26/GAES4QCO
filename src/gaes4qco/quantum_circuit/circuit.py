@@ -78,3 +78,16 @@ class Circuit:
             "nsga2_crowding_distance": self.crowding_distance,
             "columns": [col.to_dict() for col in self.columns]
         }
+
+    def copy(self) -> "Circuit":
+        """
+        Return a lightweight copy of the Circuit instance with copied columns.
+        Copies all Columns and their Gates, preserving the circuit's integrity.
+        Does not copy _structural_representation cache, as it will be recalculated when needed.
+        """
+        return Circuit(
+            count_qubits=self.count_qubits,
+            columns=[col.copy() for col in self.columns],
+            fitness=self.fitness,
+            fidelity=self.fidelity
+        )

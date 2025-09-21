@@ -89,7 +89,7 @@ def main():
                 use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
                 use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
                 use_fitness_sharing=False,  # True aumenta tempo de execução
-                crossover_strategy=CrossoverType.MULTI_POINT,
+                crossover_strategy=CrossoverType.BLOCKWISE,
                 fidelity_threshold_stop=None,
             )
         ]

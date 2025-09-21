@@ -32,6 +32,18 @@ class StepSize:
             "mean": self.mean,
         }
 
+    def copy(self) -> "StepSize":
+        """
+        Return a lightweight copy of the StepSize instance.
+        """
+        return StepSize(
+            variation=self.variation,
+            c=self.c,
+            history_len=self.history_len,
+            history=list(self.history),
+            mean=self.mean
+        )
+
 
 class CrossoverType(str, Enum):
     """Define os tipos de estratégias de crossover disponíveis."""

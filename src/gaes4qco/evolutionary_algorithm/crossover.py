@@ -1,6 +1,5 @@
 import random
-from typing import List, Tuple
-from copy import deepcopy
+from typing import Tuple
 from .interfaces import IPopulationCrossover, ICrossoverStrategy
 from .population import Population
 from quantum_circuit.circuit import Circuit, Column
@@ -37,20 +36,19 @@ class MultiPointCrossover(ICrossoverStrategy):
 
         for i in range(min_depth):
             if crossover_points[i] == 0:
-                child1_cols.append(deepcopy(parent_1.columns[i]))
-                child2_cols.append(deepcopy(parent_2.columns[i]))
+                child1_cols.append(parent_1.columns[i].copy())
+                child2_cols.append(parent_2.columns[i].copy())
             else:
-                child1_cols.append(deepcopy(parent_2.columns[i]))
-                child2_cols.append(deepcopy(parent_1.columns[i]))
+                child1_cols.append(parent_2.columns[i].copy())
+                child2_cols.append(parent_1.columns[i].copy())
 
         if parent_1.depth > min_depth:
-            child1_cols.extend(deepcopy(parent_1.columns[min_depth:]))
-        elif parent_2.depth > min_depth:
-            child2_cols.extend(deepcopy(parent_2.columns[min_depth:]))
+            child1_cols.extend([col.copy() for col in parent_1.columns[min_depth:]])
+        if parent_2.depth > min_depth:
+            child2_cols.extend([col.copy() for col in parent_2.columns[min_depth:]])
+
         num_qubits = parent_1.count_qubits
-        child1 = Circuit(num_qubits, child1_cols)
-        child2 = Circuit(num_qubits, child2_cols)
-        return child1, child2
+        return Circuit(num_qubits, child1_cols), Circuit(num_qubits, child2_cols)
 
 
 class BlockwiseCrossover(ICrossoverStrategy):
@@ -64,7 +62,7 @@ class BlockwiseCrossover(ICrossoverStrategy):
         max_depth = max(parent_1.depth, parent_2.depth)
 
         # 1. Escolhe os pontos de divisão 2D
-        split_col = random.randint(0, max_depth)
+        split_col = random.randint(0, max_depth - 1)  # Correção: índice válido
         split_qubit = random.randint(0, num_qubits - 1)
 
         # 2. Constrói os filhos combinando os "blocos"
@@ -80,26 +78,24 @@ class BlockwiseCrossover(ICrossoverStrategy):
         for i in range(max_depth):
             new_col_gates = []
 
-            # Pega gates da coluna i do pai 1 que atuam nos qubits <= split_q
-            if i < p1.depth:
-                for gate in p1.columns[i].get_gates():
-                    if all(q <= split_q for q in gate.qubits):
-                        new_col_gates.append(deepcopy(gate))
+            # Usa split_col para decidir de qual pai pegar a coluna inteira
+            if i < split_c:
+                # Antes do split_col: pega toda a coluna do pai 1
+                if i < p1.depth:
+                    new_col_gates.extend(gate.copy() for gate in p1.columns[i].get_gates())
+            else:
+                # A partir do split_col: pega gates filtrando por split_qubit
+                if i < p1.depth:
+                    for gate in p1.columns[i].get_gates():
+                        if all(q <= split_q for q in gate.qubits):
+                            new_col_gates.append(gate.copy())
+                if i < p2.depth:
+                    for gate in p2.columns[i].get_gates():
+                        if all(q > split_q for q in gate.qubits):
+                            new_col_gates.append(gate.copy())
 
-            # Pega gates da coluna i do pai 2 que atuam nos qubits > split_q
-            if i < p2.depth:
-                for gate in p2.columns[i].get_gates():
-                    if all(q > split_q for q in gate.qubits):
-                        new_col_gates.append(deepcopy(gate))
-
-            # NOTA: A "reconstrução" de gates quebrados mencionada no artigo
-            # é implicitamente tratada aqui. Ao pegar apenas os gates que se
-            # encaixam inteiramente em uma das partições (acima ou abaixo do split_qubit),
-            # nós efetivamente "destruímos" os gates que cruzam a fronteira.
-            # O algoritmo então confia nos operadores de mutação (como a RepairMutation)
-            # para preencher os "buracos" criados, introduzindo nova informação.
-
-            child_cols.append(Column(new_col_gates))
+            if new_col_gates:
+                child_cols.append(Column(new_col_gates))
 
         return Circuit(num_qubits, child_cols)
 
@@ -113,16 +109,17 @@ class SinglePointCrossover(ICrossoverStrategy):
     def crossover(self, parent_1: Circuit, parent_2: Circuit) -> Tuple[Circuit, Circuit]:
         min_depth = min(parent_1.depth, parent_2.depth)
         if min_depth == 1:
-            return deepcopy(parent_1), deepcopy(parent_2)
+            return parent_1.copy(), parent_2.copy()
 
         crossover_point = random.randint(1, min_depth - 1)
 
         # Cria os filhos trocando as colunas a partir do ponto de crossover
-        child1_cols = deepcopy(parent_1.columns[:crossover_point]) + deepcopy(parent_2.columns[crossover_point:])
-        child2_cols = deepcopy(parent_2.columns[:crossover_point]) + deepcopy(parent_1.columns[crossover_point:])
+        child1_cols = [col.copy() for col in parent_1.columns[:crossover_point]] + \
+                      [col.copy() for col in parent_2.columns[crossover_point:]]
+        child2_cols = [col.copy() for col in parent_2.columns[:crossover_point]] + \
+                      [col.copy() for col in parent_1.columns[crossover_point:]]
 
         num_qubits = max(parent_1.count_qubits, parent_2.count_qubits)
         child1 = Circuit(num_qubits, child1_cols)
         child2 = Circuit(num_qubits, child2_cols)
         return child1, child2
-

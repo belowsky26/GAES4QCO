@@ -21,3 +21,9 @@ class Column:
         return {
             "gates": [gate.to_dict() for gate in self.gates]
         }
+
+    def copy(self) -> "Column":
+        """
+        Return a lightweight copy of the Column instance with copied gates.
+        """
+        return Column([gate.copy() for gate in self.gates])

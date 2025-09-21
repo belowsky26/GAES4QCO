@@ -45,3 +45,16 @@ class Gate:
             "extra_controls": self.extra_controls,
             "is_inverse": self.is_inverse,
         }
+
+    def copy(self) -> "Gate":
+        """
+        Return a lightweight copy of the Gate instance.
+        """
+        return Gate(
+            gate_class=self.gate_class,
+            qubits=list(self.qubits),
+            parameters=list(self.parameters),
+            steps_sizes=[ss.copy() for ss in self.steps_sizes],
+            extra_controls=self.extra_controls,
+            is_inverse=self.is_inverse
+        )
