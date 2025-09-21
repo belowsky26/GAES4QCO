@@ -1,7 +1,7 @@
 import random
 import math
-from typing import List
 from copy import deepcopy
+from typing import List
 from .interfaces import IMutationStrategy, IMutationPopulation
 from .population import Population
 from quantum_circuit.circuit import Circuit, Column
@@ -18,7 +18,7 @@ class RandomMutation(IMutationPopulation):
     def mutate(self, population: Population) -> Population:
         mutated_individuals = []
         for circuit in population.get_individuals():
-            individual_copy = deepcopy(circuit)
+            individual_copy = circuit.copy()
             if random.random() < self.mutation_rate:
                 applicable_strategies = [s for s in self._strategies if s.can_apply(individual_copy)]
                 if applicable_strategies:
@@ -77,7 +77,7 @@ class BanditMutationSelector(IMutationPopulation):
     def mutate(self, population: Population) -> Population:
         mutated_individuals = []
         for circuit in population.get_individuals():
-            individual_copy = deepcopy(circuit)
+            individual_copy = circuit.copy()
             if random.random() < self.mutation_rate:
                 strategy = self._select_strategy(individual_copy)
 

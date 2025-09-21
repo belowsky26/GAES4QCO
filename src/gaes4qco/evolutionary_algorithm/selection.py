@@ -4,7 +4,6 @@ from .interfaces import ISelectionStrategy
 from .population import Population
 from quantum_circuit.circuit import Circuit
 
-
 class TournamentSelection(ISelectionStrategy):
     def __init__(self, population_size: int, tournament_size: int, elitism_count: int, survivor_selection):
         self.population_size = population_size
