@@ -78,7 +78,8 @@ class ExperimentRunner:
                 "max_depth": self.config.max_depth,
                 "diversity_threshold": self.config.diversity_threshold,
                 "injection_rate": self.config.injection_rate,
-                "stepsize": phase_config.use_stepsize
+                "stepsize": phase_config.use_stepsize,
+                "c_factor": self.config.c_factor
             },
             "adaptive_rates": {
                 "min_mutation_rate": self.config.min_mutation_rate,

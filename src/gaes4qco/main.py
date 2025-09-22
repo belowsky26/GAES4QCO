@@ -82,13 +82,13 @@ def main():
 
         ffrftn_phase = [
             PhaseConfig(
-                generations=1000,
+                generations=100,
                 use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_weighted_fitness=True,  # Não afeta quase nada ~8%
                 use_adaptive_rates=True,
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
                 use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
-                use_fitness_sharing=False,  # True aumenta tempo de execução
+                use_fitness_sharing=True,  # True aumenta tempo de execução
                 crossover_strategy=CrossoverType.BLOCKWISE,
                 fidelity_threshold_stop=None,
             )
@@ -146,7 +146,7 @@ def main():
             )
         ]
         phases = farttn_phase + warttn_phase + fartts_phase + fartnt_phase
-        phases = ffrftn_phase
+        #phases = ffrftn_phase
         experiment_configs += [
             ExperimentConfig(
                 seed=s,

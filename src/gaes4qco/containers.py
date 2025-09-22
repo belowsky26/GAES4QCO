@@ -142,7 +142,8 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
         ),
         providers.Factory(
             mutation.GateParameterMutation,
-            fitness_evaluator=optimization.evaluator
+            fitness_evaluator=optimization.evaluator,
+            c_factor=config.evolution.c_factor
         ),
         providers.Factory(mutation.SwapControlTargetMutation)
     )

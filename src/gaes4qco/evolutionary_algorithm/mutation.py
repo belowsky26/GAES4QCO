@@ -1,7 +1,6 @@
 import random
 import math
-from copy import deepcopy
-from typing import List
+from typing import List, Optional
 from .interfaces import IMutationStrategy, IMutationPopulation
 from .population import Population
 from quantum_circuit.circuit import Circuit, Column
@@ -193,11 +192,11 @@ class GateParameterMutation(IMutationStrategy):
     ## Esta é a implementação da Estratégia Evolucionária.
     """
 
-    def __init__(self, fitness_evaluator: IFitnessEvaluator):
+    def __init__(self, fitness_evaluator: IFitnessEvaluator, c_factor: Optional[float] = None):
         # ## Esta mutação PRECISA do avaliador de fitness para funcionar.
         # ## A injeção de dependência no construtor é a solução limpa.
         self._fitness_evaluator = fitness_evaluator
-        self._c_factor = 0.9  # Fator de ajuste do StepSize
+        self._c_factor = c_factor  # Fator de ajuste do StepSize
 
     def can_apply(self, circuit: Circuit) -> bool:
         # Aplicável se houver algum gate com parâmetros e step_sizes
@@ -212,7 +211,6 @@ class GateParameterMutation(IMutationStrategy):
             for i_gate, gate in enumerate(col.get_gates()):
                 for i_param in range(len(gate.parameters)):
                     mutable_params.append((i_col, i_gate, i_param))
-        # Avalia o fitness ANTES da mutação
         original_fitness, _ = self._fitness_evaluator.evaluate(circuit)
 
         # Escolhe um parâmetro e o modifica
@@ -221,7 +219,7 @@ class GateParameterMutation(IMutationStrategy):
         step_size = target_gate.steps_sizes[i_param]
 
         # Modifica o ângulo
-        change = random.gauss(0, step_size.variation)
+        change = random.gauss(0, step_size.sigma)
         target_gate.parameters[i_param] = (target_gate.parameters[i_param] + change) % (2 * math.pi)
 
         # Avalia o fitness DEPOIS da mutação
@@ -235,9 +233,9 @@ class GateParameterMutation(IMutationStrategy):
 
         success_rate = sum(step_size.history) / len(step_size.history)
         if success_rate > 1 / 5:
-            step_size.variation /= self._c_factor
+            step_size.sigma /= self._c_factor
         elif success_rate < 1 / 5:
-            step_size.variation *= self._c_factor
+            step_size.sigma *= self._c_factor
 
         return circuit
 

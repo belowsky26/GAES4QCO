@@ -49,6 +49,7 @@ class ExperimentConfig:
     injection_rate: float = 0.15  # Injeta 90% quando ativado
     sharing_radius: float = 0.4
     alpha: float = 1.0
+    c_factor: float = 0.9   # StepSize
     # O nome do arquivo de resultados é derivado da semente
     # results_filename: str = field(init=False)
 
