@@ -23,7 +23,7 @@ class Population:
 
     def get_individuals(self) -> List[Circuit]:
         """Retorna a lista de todos os indivíduos."""
-        return self._individuals
+        return list(self._individuals)
 
     @property
     def average_fitness(self) -> float:
@@ -84,10 +84,20 @@ class Population:
 
         self._individuals = unique_individuals
 
+    def without_duplicates(self) -> "Population":
+        seen_signatures = set()
+        unique_individuals = []
+        for individual in self._individuals:
+            signature = frozenset(individual.get_structural_representation())
+            if signature not in seen_signatures:
+                seen_signatures.add(signature)
+                unique_individuals.append(individual)
+        return Population(unique_individuals)
+
     def __len__(self) -> int:
         """Permite o uso de len(population_object)."""
         return len(self._individuals)
 
     def __iter__(self) -> Iterator[Circuit]:
         """Permite iterar sobre os indivíduos: for circuit in population_object:"""
-        return iter(self._individuals)
+        return iter(self.get_individuals())

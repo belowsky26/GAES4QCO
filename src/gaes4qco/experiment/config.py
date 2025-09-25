@@ -38,7 +38,7 @@ class ExperimentConfig:
     num_qubits: int = 4
     elitism_size: int = 10
     population_size: int = 200
-    tournament_size: int = 2
+    tournament_size: int = 5
     crossover_rate: float = 0.8  # Para FixedCrossover
     mutation_rate: float = 0.3  # Para FixedMutation
     min_mutation_rate: float = 0.2

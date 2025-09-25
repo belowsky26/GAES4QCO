@@ -8,16 +8,24 @@ class EvolutionRates:
     crossover_rate: float
     mutation_rate: float
 
+    def __post_init__(self):
+        if not (0 <= self.crossover_rate <= 1):
+            raise ValueError("Crossover rate must be in [0, 1].")
+        if not (0 <= self.mutation_rate <= 1):
+            raise ValueError("Mutation rate must be in [0, 1].")
+
+
 
 class IRateAdapter(ABC):
-    """Interface para estratégias que adaptam as taxas de evolução."""
+    """Interface for strategies that adapt evolutionary rates."""
 
     @abstractmethod
     def adapt(self, diversity: float) -> EvolutionRates:
         """
-        Recebe a diversidade atual e retorna as novas taxas de crossover e mutação.
+        Receives the current diversity and returns updated crossover and mutation rates.
         """
-        pass
+        ...
+
 
 
 class FixedRateAdapter(IRateAdapter):

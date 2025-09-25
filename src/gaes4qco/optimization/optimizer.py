@@ -76,10 +76,10 @@ class Optimizer:
 
             # 3. Mistura a antiga população com a nova, evitando duplicatas
             offspring_population = Population(offspring_population.get_individuals() + current_population.get_individuals())
-            offspring_population.remove_duplicates()
+            population_without_duplicates = offspring_population.without_duplicates()
 
             # 4. Mutação
-            mutated_population = self._mutation.mutate(offspring_population)
+            mutated_population = self._mutation.mutate(population_without_duplicates)
 
             # 5. Avaliação dos novos indivíduos
             self._evaluate_population(mutated_population)

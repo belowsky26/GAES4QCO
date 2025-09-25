@@ -22,7 +22,7 @@ class StepSize:
 
     def to_dict(self):
         return {
-            "variation": self.sigma,
+            "sigma": self.sigma,
             "history_len": self.history_len,
             "history": self.history
         }

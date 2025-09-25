@@ -75,9 +75,9 @@ class TournamentSelection(ISelectionStrategy):
 
 class NSGA2Selection(ISelectionStrategy):
     """
-    Implementa a seleção de sobreviventes baseada no algoritmo NSGA-II.
-    Esta estratégia substitui a seleção por torneio na fase de sobrevivência
-    para otimização multiobjetivo.
+    Survivor selection strategy based on NSGA-II.
+    - Elitism: preserves top individuals by fidelity only.
+    - Remaining slots: filled using non-dominated sorting (multi-objective).
     """
 
     def __init__(self, population_size: int, elitism_count: int):
@@ -86,20 +86,30 @@ class NSGA2Selection(ISelectionStrategy):
 
     def select(self, population: Population) -> Population:
         individuals = population.get_individuals()
-        sorted_population = sorted(individuals, key=lambda ind: ind.fidelity, reverse=True)
-        fronts = self._non_dominated_sort(sorted_population[self.elitism_count:])
-        next_gen_individuals = sorted_population[:self.elitism_count]
+        if not individuals:
+            return Population()
+
+        # 1. Preserve elites by fidelity only
+        sorted_by_fidelity = sorted(individuals, key=lambda ind: ind.fidelity, reverse=True)
+        elites = sorted_by_fidelity[:self.elitism_count]
+
+        # 2. Apply NSGA-II to the rest
+        remaining = sorted_by_fidelity[self.elitism_count:]
+        fronts = self._non_dominated_sort(remaining)
+
+        survivors = list(elites)  # elitism guarantee
+
         for front in fronts:
-            if len(next_gen_individuals) + len(front) <= self.population_size:
-                next_gen_individuals.extend(front)
+            if len(survivors) + len(front) <= self.population_size:
+                survivors.extend(front)
             else:
                 self._crowding_distance_assignment(front)
                 front.sort(key=lambda x: x.crowding_distance, reverse=True)
-                needed = self.population_size - len(next_gen_individuals)
-                next_gen_individuals.extend(front[:needed])
+                needed = self.population_size - len(survivors)
+                survivors.extend(front[:needed])
                 break
 
-        return Population(next_gen_individuals)
+        return Population(survivors)
 
     def _non_dominated_sort(self, individuals: List[Circuit]) -> List[List[Circuit]]:
         fronts = [[]]
@@ -113,7 +123,6 @@ class NSGA2Selection(ISelectionStrategy):
                     p.dominated_solutions.append(q)
                 elif self._dominates(q, p):
                     p.domination_count += 1
-
             if p.domination_count == 0:
                 p.rank = 0
                 fronts[0].append(p)
@@ -130,45 +139,34 @@ class NSGA2Selection(ISelectionStrategy):
             i += 1
             if next_front:
                 fronts.append(next_front)
-
         return fronts
 
     def _dominates(self, p: Circuit, q: Circuit) -> bool:
-        """Retorna True se p domina q."""
+        """Return True if p dominates q (Pareto dominance)."""
         p_objectives = p.objectives
         q_objectives = q.objectives
-
-        # Pelo menos um objetivo em 'p' deve ser melhor
         at_least_one_better = any(p_obj > q_obj for p_obj, q_obj in zip(p_objectives, q_objectives))
-        # Nenhum objetivo em 'p' pode ser pior
         none_worse = all(p_obj >= q_obj for p_obj, q_obj in zip(p_objectives, q_objectives))
-
         return at_least_one_better and none_worse
 
     def _crowding_distance_assignment(self, front: List[Circuit]):
         if not front:
             return
-
         for ind in front:
             ind.crowding_distance = 0.0
 
         num_objectives = len(front[0].objectives)
-
         for m in range(num_objectives):
             front.sort(key=lambda x: x.objectives[m])
-
-            # Atribui distância infinita para as soluções extremas
             front[0].crowding_distance = float('inf')
             front[-1].crowding_distance = float('inf')
 
-            # Normaliza os valores do objetivo
             min_obj = front[0].objectives[m]
             max_obj = front[-1].objectives[m]
             range_obj = max_obj - min_obj
             if range_obj == 0:
                 continue
 
-            # Calcula a distância para as soluções intermediárias
             for i in range(1, len(front) - 1):
                 distance = front[i + 1].objectives[m] - front[i - 1].objectives[m]
                 front[i].crowding_distance += distance / range_obj

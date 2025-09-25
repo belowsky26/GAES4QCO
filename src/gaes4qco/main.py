@@ -62,11 +62,11 @@ def main():
     # --- Configuração Geral dos Experimentos ---
     NUM_QUBITS = 4
     DEPTH_GEN_TARGET = 20
-    NUM_TARGETS = 4  # Quantidade de Targets criados
+    NUM_TARGETS = 10  # Quantidade de Targets criados
     NUM_EXPERIMENTS_PER_TARGET = 1  # Quantidade de Experimentos por Target
     INITIAL_SEED_TARGETS = 101  # Semente Inicial para gerar os circuitos alvos
     INITIAL_SEED_EXPERIMENTS = 1  # Semente inicial para as execuções do GA
-    ALLOWED_GATES = None # ["IGate", "RZGate", "SXGate", "XGate", "CXGate"]
+    ALLOWED_GATES = None #["IGate", "RZGate", "SXGate", "XGate", "CXGate"]
     # --- Criação dos Alvos para os Experimentos ---
     targets_svs_filename = [
         create_random_target(
@@ -82,15 +82,15 @@ def main():
 
         ffrftn_phase = [
             PhaseConfig(
-                generations=100,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
+                generations=1000,
+                use_stepsize=False,  # True: Aumenta em até 30% o tempo
                 use_weighted_fitness=True,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,
-                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
-                use_fitness_sharing=True,  # True aumenta tempo de execução
+                use_adaptive_rates=False,
+                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                use_fitness_sharing=False,  # True aumenta tempo de execução
                 crossover_strategy=CrossoverType.BLOCKWISE,
-                fidelity_threshold_stop=None,
+                fidelity_threshold_stop=False,
             )
         ]
         farttn_phase = [PhaseConfig(
@@ -146,7 +146,7 @@ def main():
             )
         ]
         phases = farttn_phase + warttn_phase + fartts_phase + fartnt_phase
-        #phases = ffrftn_phase
+        phases = ffrftn_phase
         experiment_configs += [
             ExperimentConfig(
                 seed=s,
