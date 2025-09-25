@@ -1,9 +1,11 @@
-from dataclasses import dataclass, field, asdict
+import enum
+from dataclasses import dataclass, field, asdict, is_dataclass
 from typing import List, Any, Optional, Generator
 from pathlib import Path
 import json
 import hashlib
 
+from evolutionary_algorithm.selection import SelectionType
 from shared.value_objects import CrossoverType
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -16,7 +18,8 @@ class PhaseConfig:
     use_weighted_fitness: bool
     use_adaptive_rates: bool
     use_bandit_mutation: bool
-    use_nsga2_survivor_selection: bool
+    parent_selection: SelectionType
+    survivor_selection: SelectionType
     use_fitness_sharing: bool
     crossover_strategy: CrossoverType
     generations: int
@@ -60,7 +63,8 @@ class ExperimentConfig:
             rate_flag = "A" if phase.use_adaptive_rates else "F"  # Adaptive vs Fixed
             mut_flag = "B" if phase.use_bandit_mutation else "R"  # Bandit vs Random
             step_flag = "T" if phase.use_stepsize else "F"  # True vs False
-            select_survivor_flag = "N" if phase.use_nsga2_survivor_selection else "T"  # Nsga2 vs Tournament
+            select_parent_flag = phase.parent_selection.value[0]
+            select_survivor_flag = phase.survivor_selection.value[0]
             fit_shaper_flag = "F" if phase.use_fitness_sharing else "N"  # Fitness Sharing Shaper vs Null Fitness Shaper
             crossover_flag = phase.crossover_strategy[0]
             yield f"pha={i}_{fit_flag}{rate_flag}{mut_flag}{step_flag}{select_survivor_flag}{fit_shaper_flag}"
@@ -72,10 +76,17 @@ class ExperimentConfig:
         data = asdict(self).copy()
         data.pop("target_statevector_data", None)
         data.pop("resume_from_checkpoint", None)
+        def custom_serializer(o):
+            if is_dataclass(o):
+                return asdict(o)  # converte dataclass para dict
+            if isinstance(o, enum.Enum):
+                return o.value  # ou .value, dependendo do que você quer
+            raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+
         for i in range(1, len(self.phases) + 1):
             data_final = data.copy()
             data_final["phases"] = data_final["phases"][:i]
-            canonical_string = json.dumps(data_final, sort_keys=True, separators=(",", ":"), default=lambda o: o.__dict__)
+            canonical_string = json.dumps(data_final, sort_keys=True, separators=(",", ":"), default=custom_serializer)
             hasher = hashlib.sha256(canonical_string.encode("utf-8"))
             yield hasher.hexdigest()[:8]
 

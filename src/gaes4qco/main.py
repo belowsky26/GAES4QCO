@@ -10,6 +10,7 @@ from experiment.config import ExperimentConfig, PhaseConfig
 from experiment.parallel_manager import ParallelExperimentManager
 from quantum_circuit.circuit import Circuit
 from quantum_circuit.interfaces import IQuantumCircuitAdapter
+from evolutionary_algorithm.selection import SelectionType
 from shared.value_objects import CrossoverType
 
 PROJECT_PATH = Path(__file__).resolve().parents[2]
@@ -87,65 +88,14 @@ def main():
                 use_weighted_fitness=True,  # Não afeta quase nada ~8%
                 use_adaptive_rates=False,
                 use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
+                parent_selection=SelectionType.TOURNAMENT,  # True aumenta tempo de execução
+                survivor_selection=SelectionType.TOURNAMENT,  # True aumenta tempo de execução
                 use_fitness_sharing=False,  # True aumenta tempo de execução
                 crossover_strategy=CrossoverType.BLOCKWISE,
                 fidelity_threshold_stop=False,
             )
         ]
-        farttn_phase = [PhaseConfig(
-                generations=g,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=False,  # Não afeta quase nada ~8%
-                use_adaptive_rates=False,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=False,  # True aumenta tempo de execução
-                crossover_strategy=CrossoverType.MULTI_POINT,
-                fidelity_threshold_stop=None
-            ) for g in [400, 100, 100, 400]
-        ]
-        warttn_phase = [
-            PhaseConfig(
-                generations=50,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=True,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,
-                # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=False,  # True aumenta tempo de execução,
-                crossover_strategy=CrossoverType.MULTI_POINT,
-                fidelity_threshold_stop=None
-            )
-        ]
-        fartts_phase = [
-            PhaseConfig(
-                generations=100,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=False,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=False,  # True aumenta tempo de execução
-                use_fitness_sharing=True,  # True aumenta tempo de execução
-                crossover_strategy=CrossoverType.MULTI_POINT,
-                fidelity_threshold_stop=None
-            )
-        ]
-        fartnt_phase = [
-            PhaseConfig(
-                generations=250,
-                use_stepsize=True,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=False,  # Não afeta quase nada ~8%
-                use_adaptive_rates=True,  # False: Dependendo da taxa fixa de mutação e crossover pode afetar negativamente o tempo quando
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
-                use_nsga2_survivor_selection=True,  # True aumenta tempo de execução
-                use_fitness_sharing=False,  # True aumenta tempo de execução
-                crossover_strategy=CrossoverType.MULTI_POINT,
-                fidelity_threshold_stop=None
-            )
-        ]
-        phases = farttn_phase + warttn_phase + fartts_phase + fartnt_phase
+
         phases = ffrftn_phase
         experiment_configs += [
             ExperimentConfig(

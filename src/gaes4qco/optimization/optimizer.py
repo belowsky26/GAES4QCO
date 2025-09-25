@@ -1,11 +1,7 @@
 from typing import List, Optional
 
 from evolutionary_algorithm.population_factory import PopulationFactory
-from evolutionary_algorithm.selection import NSGA2Selection
-from quantum_circuit.circuit import Circuit
-from evolutionary_algorithm.interfaces import (
-    ISelectionStrategy, ICrossoverStrategy, IMutationPopulation, IPopulationCrossover
-)
+from evolutionary_algorithm.interfaces import ISelectionStrategy, IMutationPopulation, IPopulationCrossover
 from evolutionary_algorithm.population import Population
 from evolutionary_algorithm.rate_adapter import IRateAdapter
 from .interfaces import IFitnessEvaluator, IProgressObserver, IFitnessShaper

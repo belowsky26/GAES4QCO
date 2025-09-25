@@ -66,7 +66,8 @@ class ExperimentRunner:
                 "fitness_shaper": "sharing" if phase_config.use_fitness_sharing else "default",
                 "rate_adapter": "adaptive" if phase_config.use_adaptive_rates else "default",
                 "mutation": "bandit" if phase_config.use_bandit_mutation else "default",
-                "survivor": "nsga2" if phase_config.use_nsga2_survivor_selection else "default",
+                "parent_selection": phase_config.parent_selection.value,
+                "survivor_selection": phase_config.survivor_selection.value,
                 "crossover": phase_config.crossover_strategy
             },
             "evolution": {

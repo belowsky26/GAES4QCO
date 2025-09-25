@@ -76,31 +76,50 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
     config = providers.Configuration()
     factories = providers.DependenciesContainer()
     optimization = providers.DependenciesContainer()
+    nsga2_service = providers.Factory(selection.NSGA2Service)
 
     # --- Estratégias de Seleção ---
-    parent_selector = providers.Factory(
-        selection.TournamentSelection,
-        population_size=config.evolution.population_size,
-        tournament_size=config.evolution.tournament_size,
-        elitism_count=config.evolution.elitism_size,
-        survivor_selection=False
+    parent_selector = providers.Selector(
+        config.selection_strategy.parent_selection,
+        tournament=providers.Factory(
+            selection.TournamentParentSelection,
+            population_size=config.evolution.population_size,
+            tournament_size=config.evolution.tournament_size
+        ),
+        random=providers.Factory(
+            selection.RandomParentSelection,
+            population_size=config.evolution.population_size
+        ),
+        roulette=providers.Factory(
+            selection.RouletteParentSelection,
+            population_size=config.evolution.population_size
+        )
     )
+
     survivor_selector = providers.Selector(
-        config.selection_strategy.survivor,
-        # Opção para o NSGA-II (multiobjetivo)
-        nsga2=providers.Factory(
-            selection.NSGA2Selection,
+        config.selection_strategy.survivor_selection,
+        tournament=providers.Factory(
+            selection.TournamentSurvivorSelection,
+            population_size=config.evolution.population_size,
+            tournament_size=config.evolution.tournament_size,
+            elitism_count=config.evolution.elitism_size
+        ),
+        random=providers.Factory(
+            selection.RandomSurvivorSelection,
             population_size=config.evolution.population_size,
             elitism_count=config.evolution.elitism_size
         ),
-        # Opção padrão para o torneio (single-objective)
-        default=providers.Factory(
-            selection.TournamentSelection,
+        roulette=providers.Factory(
+            selection.RouletteSurvivorSelection,
             population_size=config.evolution.population_size,
-            tournament_size=config.evolution.tournament_size,
-            elitism_count=config.evolution.elitism_size,
-            survivor_selection=True
+            elitism_count=config.evolution.elitism_size
         ),
+        nsga2=providers.Factory(
+            selection.NSGA2SurvivorSelection,
+            population_size=config.evolution.population_size,
+            elitism_count=config.evolution.elitism_size,
+            nsga2_service=nsga2_service
+        )
     )
 
     singlepoint_crossover = providers.Factory(
