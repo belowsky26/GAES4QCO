@@ -78,6 +78,22 @@ class GateFactory:
             is_inverse=False
         )
 
+    def build_identity_gate(self, qubit: int) -> Gate:
+        """
+        Cria uma IGate (porta identidade) fixa em um qubit específico.
+        Não adiciona aleatoriedade, usada em casos de preenchimento estrutural.
+        """
+        from qiskit.circuit.library.standard_gates import IGate
+
+        return Gate(
+            gate_class=IGate,
+            qubits=[qubit],
+            parameters=[],
+            steps_sizes=None,
+            extra_controls=0,
+            is_inverse=False
+        )
+
     def create_from_dict(self, data: dict) -> Gate:
         """
         Reconstrói uma entidade Gate a partir de um dicionário (proveniente de um JSON).

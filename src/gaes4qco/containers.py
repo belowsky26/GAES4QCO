@@ -129,7 +129,8 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
         crossover.MultiPointCrossover
     )
     blockwise_crossover = providers.Factory(
-        crossover.BlockwiseCrossover
+        crossover.BlockwiseCrossover,
+        gate_factory=factories.gate_factory
     )
     crossover_strategy_selector = providers.Selector(
         config.selection_strategy.crossover,

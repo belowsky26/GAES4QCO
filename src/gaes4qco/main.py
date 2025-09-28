@@ -85,9 +85,9 @@ def main():
             PhaseConfig(
                 generations=1000,
                 use_stepsize=False,  # True: Aumenta em até 30% o tempo
-                use_weighted_fitness=True,  # Não afeta quase nada ~8%
-                use_adaptive_rates=False,
-                use_bandit_mutation=False,  # True aumenta tempo de execução ~200%
+                use_weighted_fitness=False,  # Não afeta quase nada ~8%
+                use_adaptive_rates=True,
+                use_bandit_mutation=True,  # True aumenta tempo de execução ~200%
                 parent_selection=SelectionType.TOURNAMENT,  # True aumenta tempo de execução
                 survivor_selection=SelectionType.TOURNAMENT,  # True aumenta tempo de execução
                 use_fitness_sharing=False,  # True aumenta tempo de execução

@@ -1,5 +1,8 @@
 import random
-from typing import Tuple
+from typing import Tuple, List
+
+from quantum_circuit.gate import Gate
+from quantum_circuit.gate_factory import GateFactory
 from .interfaces import IPopulationCrossover, ICrossoverStrategy
 from .population import Population
 from quantum_circuit.circuit import Circuit, Column
@@ -24,6 +27,8 @@ class PopulationCrossover(IPopulationCrossover):
             if random.random() < self.crossover_rate:
                 child1, child2 = self.crossover_strategy.crossover(parent1, parent2)
                 offspring.extend([child1, child2])
+            else:
+                offspring.extend([parent1, parent2])
 
         return Population(offspring)
 
@@ -50,54 +55,55 @@ class MultiPointCrossover(ICrossoverStrategy):
         num_qubits = parent_1.count_qubits
         return Circuit(num_qubits, child1_cols), Circuit(num_qubits, child2_cols)
 
-
 class BlockwiseCrossover(ICrossoverStrategy):
     """
-    Crossover 2D que divide os pais por uma coluna e um qubit.
-    Pode quebrar e reconstruir gates, introduzindo nova informação genética.
+    2D crossover that splits parents by a column and a qubit.
+    Reuses existing gates only, does not create new genes.
     """
+    def __init__(self, gate_factory: GateFactory):
+        self._gate_factory = gate_factory
 
     def crossover(self, parent_1: Circuit, parent_2: Circuit) -> Tuple[Circuit, Circuit]:
         num_qubits = max(parent_1.count_qubits, parent_2.count_qubits)
-        max_depth = max(parent_1.depth, parent_2.depth)
+        min_depth = min(parent_1.depth, parent_2.depth)
 
-        # 1. Escolhe os pontos de divisão 2D
-        split_col = random.randint(0, max_depth - 1)  # Correção: índice válido
+        split_col = random.randint(0, min_depth - 1)
         split_qubit = random.randint(0, num_qubits - 1)
 
-        # 2. Constrói os filhos combinando os "blocos"
-        child1 = self._build_child(parent_1, parent_2, split_col, split_qubit, num_qubits)
-        child2 = self._build_child(parent_2, parent_1, split_col, split_qubit, num_qubits)
+        child1 = self._build_child(parent_1, parent_2, split_col, split_qubit, num_qubits, min_depth)
+        child2 = self._build_child(parent_2, parent_1, split_col, split_qubit, num_qubits, min_depth)
+
+        if parent_1.depth > min_depth:
+            child1.columns.extend(col.copy() for col in parent_1.columns[min_depth:])
+        if parent_2.depth > min_depth:
+            child2.columns.extend(col.copy() for col in parent_2.columns[min_depth:])
 
         return child1, child2
 
-    def _build_child(self, p1: Circuit, p2: Circuit, split_c: int, split_q: int, num_qubits: int) -> Circuit:
+    def _build_child(
+        self, p1: Circuit, p2: Circuit, split_c: int, split_q: int, num_qubits: int, depth: int
+    ) -> Circuit:
         child_cols = []
-        max_depth = max(p1.depth, p2.depth)
 
-        for i in range(max_depth):
-            new_col_gates = []
-
-            # Usa split_col para decidir de qual pai pegar a coluna inteira
+        for i in range(depth):
+            new_col_gates: List[Gate] = []
             if i < split_c:
-                # Antes do split_col: pega toda a coluna do pai 1
                 if i < p1.depth:
-                    new_col_gates.extend(gate.copy() for gate in p1.columns[i].get_gates())
+                    new_col_gates.extend(g.copy() for g in p1.columns[i].get_gates())
             else:
-                # A partir do split_col: pega gates filtrando por split_qubit
                 if i < p1.depth:
-                    for gate in p1.columns[i].get_gates():
-                        if all(q <= split_q for q in gate.qubits):
-                            new_col_gates.append(gate.copy())
+                    new_col_gates.extend(g.copy() for g in p1.columns[i].get_gates() if all(q <= split_q for q in g.qubits))
                 if i < p2.depth:
-                    for gate in p2.columns[i].get_gates():
-                        if all(q > split_q for q in gate.qubits):
-                            new_col_gates.append(gate.copy())
-
-            if new_col_gates:
-                child_cols.append(Column(new_col_gates))
+                    new_col_gates.extend(g.copy() for g in p2.columns[i].get_gates() if all(q > split_q for q in g.qubits))
+            free_qubits = set(range(num_qubits))
+            for g in new_col_gates:
+                free_qubits -= set(g.qubits)
+            for q in free_qubits:
+                new_col_gates.append(self._gate_factory.build_identity_gate(q))
+            child_cols.append(Column(new_col_gates))
 
         return Circuit(num_qubits, child_cols)
+
 
 
 class SinglePointCrossover(ICrossoverStrategy):

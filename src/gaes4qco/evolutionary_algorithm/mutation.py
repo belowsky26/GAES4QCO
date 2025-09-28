@@ -38,8 +38,12 @@ class BanditMutationSelector(IMutationPopulation):
     para aprender dinamicamente qual operador é mais eficaz.
     """
 
-    def __init__(self, mutation_strategies: List[IMutationStrategy], mutation_rate: float,
-                 fitness_evaluator: IFitnessEvaluator):
+    def __init__(
+        self,
+        mutation_strategies: List[IMutationStrategy],
+        mutation_rate: float,
+        fitness_evaluator: IFitnessEvaluator
+    ):
         self._strategies = mutation_strategies
         self.mutation_rate = mutation_rate
         self._fitness_evaluator = fitness_evaluator  # Necessário para mutações sem avaliação interna
