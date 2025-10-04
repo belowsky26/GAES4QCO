@@ -9,7 +9,7 @@ from optimization.interfaces import IFitnessEvaluator
 
 
 # --- Classe Composta para aplicar mutações aleatórias ---
-class RandomMutation(IMutationPopulation):
+class RandomMutationSelector(IMutationPopulation):
     def __init__(self, mutation_strategies: List[IMutationStrategy], mutation_rate: float = 0.1):
         self._strategies = mutation_strategies
         self.mutation_rate = mutation_rate
@@ -34,8 +34,8 @@ class RandomMutation(IMutationPopulation):
 # --- SELETOR ADAPTATIVO (MAB-UCB) ---
 class BanditMutationSelector(IMutationPopulation):
     """
-    Seleciona um operador de mutação usando um algoritmo Multi-Armed Bandit (UCB1)
-    para aprender dinamicamente qual operador é mais eficaz.
+    Seleciona um operador de mutação usando o algoritmo Multi-Armed Bandit (UCB1).
+    Implementação formal baseada em Auer et al. (2002).
     """
 
     def __init__(
@@ -46,36 +46,39 @@ class BanditMutationSelector(IMutationPopulation):
     ):
         self._strategies = mutation_strategies
         self.mutation_rate = mutation_rate
-        self._fitness_evaluator = fitness_evaluator  # Necessário para mutações sem avaliação interna
+        self._fitness_evaluator = fitness_evaluator
 
-        # Estruturas de dados para o MAB
+        # Estruturas para MAB
         self._rewards = {s.__class__.__name__: 0.0 for s in self._strategies}
         self._counts = {s.__class__.__name__: 0 for s in self._strategies}
         self._total_applications = 0
 
     def _select_strategy(self, individual: Circuit) -> IMutationStrategy:
-        """Seleciona a melhor estratégia usando a fórmula UCB1."""
-        # Garante que cada estratégia seja usada pelo menos uma vez
+        """Seleciona a melhor estratégia usando UCB1 formal."""
+
         applicable_strategies = [s for s in self._strategies if s.can_apply(individual)]
+        if not applicable_strategies:
+            raise RuntimeError("Nenhuma estratégia aplicável disponível para o indivíduo.")
 
-        for i, s in enumerate(applicable_strategies):
+        # 1. Exploração inicial: use cada estratégia ao menos uma vez
+        for s in applicable_strategies:
             if self._counts[s.__class__.__name__] == 0:
-                return applicable_strategies[i]
+                return s
 
-        # Calcula a pontuação UCB1 para cada estratégia
+        # 2. Atualiza o número total de aplicações (n no UCB)
+        n = self._total_applications if self._total_applications > 0 else 1
+
+        # 3. Calcula UCB para cada estratégia
         ucb_scores = {}
         for s in applicable_strategies:
             name = s.__class__.__name__
             avg_reward = self._rewards[name] / self._counts[name]
-            exploration_term = math.sqrt((2 * math.log(self._total_applications)) / self._counts[name])
+            exploration_term = math.sqrt((2 * math.log(n)) / self._counts[name])
             ucb_scores[name] = avg_reward + exploration_term
 
+        # 4. Seleciona a melhor estratégia
         best_strategy_name = max(ucb_scores, key=ucb_scores.get)
-
-        for s in applicable_strategies:
-            if s.__class__.__name__ == best_strategy_name:
-                return s
-        return random.choice(applicable_strategies)  # Fallback
+        return next(s for s in applicable_strategies if s.__class__.__name__ == best_strategy_name)
 
     def mutate(self, population: Population) -> Population:
         mutated_individuals = []
@@ -84,15 +87,14 @@ class BanditMutationSelector(IMutationPopulation):
             if random.random() < self.mutation_rate:
                 strategy = self._select_strategy(individual_copy)
 
-                # Para estratégias que não calculam fitness, nós o fazemos aqui
+                # Avaliação antes e depois da mutação
                 original_fitness, _ = self._fitness_evaluator.evaluate(individual_copy)
-
-                # Aplica a mutação (que agora pode ou não calcular a recompensa)
                 mutated_circuit = strategy.mutate_individual(individual_copy)
                 mutated_fitness, _ = self._fitness_evaluator.evaluate(mutated_circuit)
+
                 reward = mutated_fitness - original_fitness
 
-                # Atualiza as estatísticas do MAB
+                # Atualiza estatísticas MAB
                 strategy_name = strategy.__class__.__name__
                 self._counts[strategy_name] += 1
                 self._rewards[strategy_name] += reward
@@ -103,6 +105,7 @@ class BanditMutationSelector(IMutationPopulation):
                 mutated_individuals.append(individual_copy)
 
         return Population(mutated_individuals)
+
 
 
 # --- Classes de Estratégia de Mutação Específicas ---
@@ -135,10 +138,6 @@ class SingleGateFlipMutation(IMutationStrategy):
         target_col.add_gate(new_gate)
         return circuit
 
-
-# ======================================================================
-# ## NOVAS CLASSES DE MUTAÇÃO ADICIONADAS ABAIXO
-# ======================================================================
 
 class ChangeDepthMutation(IMutationStrategy):
     """
@@ -205,7 +204,7 @@ class GateParameterMutation(IMutationStrategy):
     def can_apply(self, circuit: Circuit) -> bool:
         # Aplicável se houver algum gate com parâmetros e step_sizes
         return any(
-            (gate.parameters and gate.steps_sizes)
+            gate.parameters
             for col in circuit.columns for gate in col.get_gates()
         )
 
@@ -220,26 +219,29 @@ class GateParameterMutation(IMutationStrategy):
         # Escolhe um parâmetro e o modifica
         i_col, i_gate, i_param = random.choice(mutable_params)
         target_gate = circuit.columns[i_col].gates[i_gate]
-        step_size = target_gate.steps_sizes[i_param]
+        if any(gate.steps_sizes for col in circuit.columns for gate in col.get_gates()):
+            step_size = target_gate.steps_sizes[i_param]
 
-        # Modifica o ângulo
-        change = random.gauss(0, step_size.sigma)
-        target_gate.parameters[i_param] = (target_gate.parameters[i_param] + change) % (2 * math.pi)
+            # Modifica o ângulo
+            change = random.gauss(0, step_size.sigma)
+            target_gate.parameters[i_param] = (target_gate.parameters[i_param] + change) % (2 * math.pi)
 
-        # Avalia o fitness DEPOIS da mutação
-        mutated_fitness, _ = self._fitness_evaluator.evaluate(circuit)
+            # Avalia o fitness DEPOIS da mutação
+            mutated_fitness, _ = self._fitness_evaluator.evaluate(circuit)
 
-        # Regra de 1/5 de sucesso para atualizar o StepSize
-        success = mutated_fitness > original_fitness
-        step_size.history.append(int(success))
-        if len(step_size.history) > step_size.history_len:
-            step_size.history.pop(0)
+            # Regra de 1/5 de sucesso para atualizar o StepSize
+            success = mutated_fitness > original_fitness
+            step_size.history.append(int(success))
+            if len(step_size.history) > step_size.history_len:
+                step_size.history.pop(0)
 
-        success_rate = sum(step_size.history) / len(step_size.history)
-        if success_rate > 1 / 5:
-            step_size.sigma /= self._c_factor
-        elif success_rate < 1 / 5:
-            step_size.sigma *= self._c_factor
+            success_rate = sum(step_size.history) / len(step_size.history)
+            if success_rate > 1 / 5:
+                step_size.sigma /= self._c_factor
+            elif success_rate < 1 / 5:
+                step_size.sigma *= self._c_factor
+        else:
+            target_gate.parameters[i_param] = (target_gate.parameters[i_param] + random.gauss(0, math.pi / 4)) % (2 * math.pi)
 
         return circuit
 

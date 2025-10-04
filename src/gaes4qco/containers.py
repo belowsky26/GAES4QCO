@@ -177,7 +177,7 @@ class EvolutionaryAlgorithmContainer(containers.DeclarativeContainer):
             fitness_evaluator=optimization.evaluator
         ),
         default=providers.Factory(
-            mutation.RandomMutation,
+            mutation.RandomMutationSelector,
             mutation_strategies=mutation_pool,
             mutation_rate=config.evolution.mutation_rate
         ),
