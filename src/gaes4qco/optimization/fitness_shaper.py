@@ -1,3 +1,4 @@
+from analysis.distance_metrics import StructuralJaccardDistance
 from analysis.interfaces import IDistanceMetric
 
 from .interfaces import IFitnessShaper
@@ -17,7 +18,7 @@ class FitnessSharingShaper(IFitnessShaper):
     Penaliza indivíduos que são muito similares a outros.
     """
 
-    def __init__(self, sharing_radius: float, alpha: float, distance_metric: IDistanceMetric):
+    def __init__(self, sharing_radius: float, alpha: float):
         """
         Args:
             sharing_radius (float): O raio de nicho (sigma_share). A distância abaixo
@@ -26,7 +27,7 @@ class FitnessSharingShaper(IFitnessShaper):
         """
         self._sigma_share = sharing_radius
         self._alpha = alpha
-        self._distance_metric = distance_metric
+        self._distance_metric = StructuralJaccardDistance()
 
     def shape(self, population: Population):
         """Ajusta o fitness de cada indivíduo na população."""
