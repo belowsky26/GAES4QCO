@@ -136,6 +136,7 @@ class SingleGateFlipMutation(IMutationStrategy):
         removed_gate = target_col.gates.pop(gate_idx_to_remove)
         new_gate = self._gate_factory.build_gate(removed_gate.qubits, self.use_evolutionary_strategy)
         target_col.add_gate(new_gate)
+        circuit.columns[col_idx] = target_col
         return circuit
 
 
@@ -225,7 +226,7 @@ class GateParameterMutation(IMutationStrategy):
             # Modifica o ângulo
             change = random.gauss(0, step_size.sigma)
             target_gate.parameters[i_param] = (target_gate.parameters[i_param] + change) % (2 * math.pi)
-
+            circuit.columns[i_col].gates[i_gate] = target_gate
             # Avalia o fitness DEPOIS da mutação
             mutated_fitness, _ = self._fitness_evaluator.evaluate(circuit)
 
@@ -242,7 +243,7 @@ class GateParameterMutation(IMutationStrategy):
                 step_size.sigma *= self._c_factor
         else:
             target_gate.parameters[i_param] = (target_gate.parameters[i_param] + random.gauss(0, math.pi / 4)) % (2 * math.pi)
-
+            circuit.columns[i_col].gates[i_gate] = target_gate
         return circuit
 
 
@@ -285,5 +286,5 @@ class SwapControlTargetMutation(IMutationStrategy):
         new_qubits[idx_control], new_qubits[idx_target] = new_qubits[idx_target], new_qubits[idx_control]
 
         target_gate.qubits = new_qubits
-
+        circuit.columns[i_col].gates[i_gate] = target_gate
         return circuit

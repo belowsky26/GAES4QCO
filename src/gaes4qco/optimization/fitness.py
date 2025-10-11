@@ -27,6 +27,7 @@ class FidelityFitnessEvaluator(IFitnessEvaluator):
         # ## O cálculo de fidelidade do Qiskit é realizado aqui
         solution_sv = Statevector.from_instruction(qiskit_circuit)
         fidelity = state_fidelity(solution_sv, self._target_sv)
+        circuit.fidelity = fidelity
         return max(0.0, fidelity), fidelity
 
 
