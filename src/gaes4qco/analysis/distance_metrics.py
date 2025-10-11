@@ -7,8 +7,8 @@ class StructuralJaccardDistance(IDistanceMetric):
     Calcula a distância estrutural usando a métrica de Jaccard.
     Ignora parâmetros de gate e usa apenas a estrutura.
     """
-
-    def calculate(self, ind1: Circuit, ind2: Circuit) -> float:
+    @staticmethod
+    def calculate(ind1: Circuit, ind2: Circuit) -> float:
         set1 = set(ind1.get_structural_representation())
         set2 = set(ind2.get_structural_representation())
 

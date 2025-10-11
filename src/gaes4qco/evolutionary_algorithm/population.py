@@ -1,7 +1,7 @@
 from itertools import combinations
 from typing import List, Iterator
 
-from analysis.interfaces import IDistanceMetric
+from analysis.distance_metrics import StructuralJaccardDistance
 from quantum_circuit.circuit import Circuit
 
 
@@ -10,9 +10,9 @@ class Population:
     Encapsula uma coleção de indivíduos (Circuitos) e fornece
     operações úteis sobre o conjunto.
     """
-    def __init__(self, distance_metric: IDistanceMetric, individuals: List[Circuit] = None):
+    def __init__(self, individuals: List[Circuit] = None):
         self._individuals = individuals if individuals is not None else []
-        self._distance_metric = distance_metric
+        self._distance_metric = StructuralJaccardDistance()
 
     def add_individual(self, individual: Circuit):
         """Adiciona um indivíduo à população."""

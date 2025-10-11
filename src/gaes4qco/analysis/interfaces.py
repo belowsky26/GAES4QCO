@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+
+from quantum_circuit.circuit import Circuit
 from .data_models import ResultData
 
 
@@ -18,7 +20,8 @@ class IPlotter(ABC):
         pass
 
 class IDistanceMetric(ABC):
-    @abstractmethod
-    def calculate(self, ind1: Circuit, ind2: Circuit) -> float:
+
+    @staticmethod
+    def calculate(ind1: Circuit, ind2: Circuit) -> float:
         """Calcula a distância entre dois indivíduos."""
         pass
