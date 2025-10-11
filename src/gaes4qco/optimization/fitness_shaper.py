@@ -1,4 +1,5 @@
-from itertools import combinations
+from analysis.interfaces import IDistanceMetric
+
 from .interfaces import IFitnessShaper
 from evolutionary_algorithm.population import Population
 
@@ -16,7 +17,7 @@ class FitnessSharingShaper(IFitnessShaper):
     Penaliza indivíduos que são muito similares a outros.
     """
 
-    def __init__(self, sharing_radius: float, alpha: float):
+    def __init__(self, sharing_radius: float, alpha: float, distance_metric: IDistanceMetric):
         """
         Args:
             sharing_radius (float): O raio de nicho (sigma_share). A distância abaixo
@@ -25,20 +26,7 @@ class FitnessSharingShaper(IFitnessShaper):
         """
         self._sigma_share = sharing_radius
         self._alpha = alpha
-
-    def _calculate_distance(self, ind1, ind2) -> float:
-        """Calcula a distância de Jaccard normalizada entre dois indivíduos."""
-        set1 = ind1.get_structural_representation()
-        set2 = ind2.get_structural_representation()
-
-        intersection_size = len(set1.intersection(set2))
-        union_size = len(set1.union(set2))
-
-        if union_size == 0:
-            return 0.0
-
-        jaccard_similarity = intersection_size / union_size
-        return 1.0 - jaccard_similarity
+        self._distance_metric = distance_metric
 
     def shape(self, population: Population):
         """Ajusta o fitness de cada indivíduo na população."""
@@ -47,7 +35,7 @@ class FitnessSharingShaper(IFitnessShaper):
         for i in range(len(individuals)):
             niche_count = 0
             for j in range(len(individuals)):
-                distance = self._calculate_distance(individuals[i], individuals[j])
+                distance = self._distance_metric.calculate(individuals[i], individuals[j])
 
                 # Calcula a função de compartilhamento
                 if distance < self._sigma_share:

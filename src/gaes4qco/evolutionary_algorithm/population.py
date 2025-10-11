@@ -1,5 +1,7 @@
 from itertools import combinations
 from typing import List, Iterator
+
+from analysis.interfaces import IDistanceMetric
 from quantum_circuit.circuit import Circuit
 
 
@@ -8,8 +10,9 @@ class Population:
     Encapsula uma coleção de indivíduos (Circuitos) e fornece
     operações úteis sobre o conjunto.
     """
-    def __init__(self, individuals: List[Circuit] = None):
+    def __init__(self, distance_metric: IDistanceMetric, individuals: List[Circuit] = None):
         self._individuals = individuals if individuals is not None else []
+        self._distance_metric = distance_metric
 
     def add_individual(self, individual: Circuit):
         """Adiciona um indivíduo à população."""
@@ -47,21 +50,7 @@ class Population:
         pairs = list(combinations(self._individuals, 2))
 
         for ind1, ind2 in pairs:
-            # Pega a "impressão digital" de cada circuito
-            set1 = ind1.get_structural_representation()
-            set2 = ind2.get_structural_representation()
-
-            # Calcula a distância de Jaccard: 1 - (tamanho da interseção / tamanho da união)
-            intersection_size = len(set1.intersection(set2))
-            union_size = len(set1.union(set2))
-
-            if union_size == 0:
-                distance = 0.0
-            else:
-                jaccard_similarity = intersection_size / union_size
-                distance = 1.0 - jaccard_similarity
-
-            total_distance += distance
+            total_distance += self._distance_metric.calculate(ind1, ind2)
 
         # Retorna a média da distância entre todos os pares
         return total_distance / len(pairs)

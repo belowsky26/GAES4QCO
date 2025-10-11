@@ -39,33 +39,32 @@ class Circuit:
     def depth(self) -> int:
         return len(self.columns)
 
-    def get_structural_representation(self) -> Set[Tuple]:
+    def get_structural_representation(self) -> Tuple[Tuple]:
         """
         Cria uma representação única da estrutura do circuito, ignorando parâmetros.
-        O resultado é um conjunto de tuplas, onde cada tupla representa um gate.
-        Ex: {('HGate', (0,)), ('CXGate', (0, 1)), ...}
+        O resultado é uma tupla de colunas, onde cada coluna é uma tupla de gates.
+        Exemplo simplificado:
+            (
+                (('HGate', (0,), 0, False),),
+                (('CXGate', (0, 1), 0, False),)
+            )
         """
-        if self._structural_representation:
-            return self._structural_representation
-
-        representation = set()
+        representation = []
         for i_col, col in enumerate(self.columns):
+            col_repr = []
             for gate in col.get_gates():
-                # Normaliza os qubits para a ordem ser irrelevante
                 qubits_tuple = tuple(sorted(gate.qubits))
-                params_tuple = tuple(round(p, 6) for p in gate.parameters)
                 gene = (
                     gate.gate_class.__name__,
                     qubits_tuple,
-                    params_tuple,
                     gate.extra_controls,
                     gate.is_inverse,
                     i_col
                 )
-                representation.add(gene)
+                col_repr.append(gene)
+            representation.append(tuple(col_repr))
 
-        self._structural_representation = set(sorted(list(representation)))
-        return self._structural_representation
+        return tuple(representation)
 
     def to_dict(self) -> dict:
         """Converte o objeto Circuit e seus componentes para um dicionário serializável."""

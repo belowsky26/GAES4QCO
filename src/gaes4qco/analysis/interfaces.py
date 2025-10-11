@@ -16,3 +16,9 @@ class IPlotter(ABC):
     def plot(self, data: ResultData, output_path: str):
         """Gera e salva um gráfico a partir de um objeto ResultData."""
         pass
+
+class IDistanceMetric(ABC):
+    @abstractmethod
+    def calculate(self, ind1: Circuit, ind2: Circuit) -> float:
+        """Calcula a distância entre dois indivíduos."""
+        pass
