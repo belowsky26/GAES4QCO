@@ -67,4 +67,7 @@ class DiversityAdaptiveRateAdapter(IRateAdapter):
         # Interpolação linear direta para o crossover
         crossover_rate = self.min_cr + (diversity_norm * (self.max_cr - self.min_cr))
 
+        mutation_rate = max(self.min_mr, min(self.max_mr, mutation_rate))
+        crossover_rate = max(self.min_cr, min(self.max_cr, crossover_rate))
+
         return EvolutionRates(crossover_rate=crossover_rate, mutation_rate=mutation_rate)
