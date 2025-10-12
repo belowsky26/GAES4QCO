@@ -43,31 +43,31 @@ class ExperimentConfig:
     population_size: int = 200
     tournament_size: int = 5
     crossover_rate: float = 0.8  # Para FixedCrossover
-    mutation_rate: float = 0.3  # Para FixedMutation
+    mutation_rate: float = 0.15  # Para FixedMutation
     min_mutation_rate: float = 0.2
     max_mutation_rate: float = 0.5
     min_crossover_rate: float = 0.6
     max_crossover_rate: float = 0.95
-    diversity_threshold: float = -1  # Limiar de 10%
-    injection_rate: float = 0.15  # Injeta 90% quando ativado
-    sharing_radius: float = 0.4
+    diversity_threshold: float = 0.1  # Limiar de 10%
+    injection_rate: float = 0.15  # Injeta 15% quando ativado
+    sharing_radius: float = 0.3
     alpha: float = 1.0
-    c_factor: float = 0.9   # StepSize
+    c_factor: float = 1.2   # StepSize
     # O nome do arquivo de resultados é derivado da semente
     # results_filename: str = field(init=False)
 
     def get_config_foldername(self) -> Generator[str, Any, None]:
         """Gera um nome de pasta descritivo a partir das flags de configuração."""
         for i, phase in enumerate(self.phases):
-            fit_flag = "W" if phase.use_weighted_fitness else "F"  # Weighted vs Fidelity-only
-            rate_flag = "A" if phase.use_adaptive_rates else "F"  # Adaptive vs Fixed
-            mut_flag = "B" if phase.use_bandit_mutation else "R"  # Bandit vs Random
-            step_flag = "T" if phase.use_stepsize else "F"  # True vs False
-            select_parent_flag = phase.parent_selection.value[0]
-            select_survivor_flag = phase.survivor_selection.value[0]
-            fit_shaper_flag = "F" if phase.use_fitness_sharing else "N"  # Fitness Sharing Shaper vs Null Fitness Shaper
-            crossover_flag = phase.crossover_strategy[0]
-            yield f"pha={i}_{fit_flag}{rate_flag}{mut_flag}{step_flag}{select_survivor_flag}{fit_shaper_flag}"
+            fit_flag = "WG" if phase.use_weighted_fitness else "FD"  # Weighted vs Fidelity-only
+            rate_flag = "AD" if phase.use_adaptive_rates else "FX"  # Adaptive vs Fixed
+            mut_flag = "BD" if phase.use_bandit_mutation else "RD"  # Bandit vs Random
+            step_flag = "ST" if phase.use_stepsize else "NR"  # Stepsize vs Normal
+            select_parent_flag = phase.parent_selection.value[:2]
+            select_survivor_flag = phase.survivor_selection.value[0:2]
+            fit_shaper_flag = "FT" if phase.use_fitness_sharing else "NL"  # Fitness Sharing Shaper vs Null Fitness Shaper
+            crossover_flag = phase.crossover_strategy[0:2]
+            yield f"pha={i}_{fit_flag}_{crossover_flag}_{select_parent_flag}_{select_survivor_flag}_{rate_flag}_{mut_flag}_{step_flag}_{fit_shaper_flag}"
 
     def get_config_hash(self) -> Generator[str, Any, None]:
         """
