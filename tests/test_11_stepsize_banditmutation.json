@@ -12,7 +12,7 @@
       "use_stepsize": true,
       "use_weighted_fitness": false,
       "use_adaptive_rates": false,
-      "use_bandit_mutation": false,
+      "use_bandit_mutation": true,
       "parent_selection": "TOURNAMENT",
       "survivor_selection": "TOURNAMENT",
       "use_fitness_sharing": false,

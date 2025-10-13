@@ -19,7 +19,7 @@ def main():
 
     # --- Load all test configurations ---
     loader = TestConfigLoader(tests_dir)
-    experiment_configs = loader.load_all()
+    experiment_configs, filenames = loader.load_all()
 
     if not experiment_configs:
         print("⚠️ No valid test configurations found. Exiting.")
@@ -29,6 +29,7 @@ def main():
     print(f"🧠 Running {len(experiment_configs)} experiments in parallel...")
     manager = ParallelExperimentManager(
         configs=experiment_configs,
+        filenames=filenames,
         max_processes=len(experiment_configs)
     )
 
@@ -37,15 +38,16 @@ def main():
     # --- Summarize results ---
     print("\n=== 🧩 EXPERIMENT SUMMARY ===")
     for result in all_results:
+        fname = result.get("filename", "unknown.json")
         seed = result.get("seed", "N/A")
         best_fit = result.get("best_fitness", 0.0)
         duration = result.get("duration_seconds", 0.0)
-        print(f" • Seed {seed}: Best Fitness = {best_fit:.6f} | Duration = {duration:.2f}s")
+        print(f"📄 {fname}: Seed {seed} | Best Fitness = {best_fit:.6f} | Duration = {duration:.2f}s")
 
     if all_results:
         best_run = max(all_results, key=lambda r: r.get("best_fitness", 0.0))
         print("\n🏆 BEST RUN SUMMARY")
-        print(f"Seed {best_run['seed']} with Fitness {best_run['best_fitness']:.6f}")
+        print(f"📄 {best_run['filename']} | Seed {best_run['seed']} | Fitness {best_run['best_fitness']:.6f}")
 
     print("\n✅ All experiments completed successfully.")
 

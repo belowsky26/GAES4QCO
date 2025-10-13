@@ -145,14 +145,16 @@ class TestConfigLoader:
 
         return ExperimentConfig(**required_kwargs)
 
-    def load_all(self) -> List[ExperimentConfig]:
+    def load_all(self) -> Tuple[List[ExperimentConfig], List[str]]:
         """Loads all JSON configs from the tests directory."""
         configs = []
+        filenames = []
         for file_path in sorted(self.tests_dir.glob("*.json")):
             try:
                 cfg = self._load_json(file_path)
                 configs.append(self._build_experiment(cfg))
+                filenames.append(file_path.name)
                 print(f"✅ Loaded test config: {file_path.name}")
             except Exception as e:
                 print(f"⚠️ Failed to load {file_path.name}: {e}")
-        return configs
+        return configs, filenames

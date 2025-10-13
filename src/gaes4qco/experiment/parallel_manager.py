@@ -11,8 +11,9 @@ from .runner import ExperimentRunner
 class ParallelExperimentManager:
     """Gerencia a execução de múltiplos experimentos em paralelo."""
 
-    def __init__(self, configs: List[ExperimentConfig], max_processes: int):
+    def __init__(self, configs: List[ExperimentConfig], filenames: List[str], max_processes: int):
         self.configs = configs
+        self.filenames = filenames
         self.max_processes = min(max_processes, cpu_count())
         self.experiment_container = ExperimentContainer()
 
@@ -24,25 +25,24 @@ class ParallelExperimentManager:
         print(f"Iniciando {num_experiments} experimentos em {num_processes} processos paralelos...")
         start_time = time.time()
         experiments = []
-        for i in range(num_experiments):
-            config_dict = asdict(self.configs[i])
+        for i, cfg in enumerate(self.configs):
+            config_dict = asdict(cfg)
             self.experiment_container.config.from_dict(config_dict)
-            experiments.append(self.experiment_container.runner())
+            runner = self.experiment_container.runner()
+            experiments.append((runner, self.filenames[i]))
 
         with Pool(num_processes) as pool:
             # Usa starmap para passar cada objeto de configuração para a função de execução
-            results = pool.map(run_experiment, experiments)
+            results = pool.starmap(run_experiment, experiments)
 
-        end_time = time.time()
-        total_duration = end_time - start_time
+        total_duration = time.time() - start_time
         print(f"--- Fim de todos os experimentos | Duração Total: {total_duration:.2f}s ---")
 
         return results
 
 
-def run_experiment(runner: ExperimentRunner) -> dict:
-    """
-    Cria uma instância do container, configura-o e usa-o para
-    construir e executar um ExperimentRunner.
-    """
-    return runner.run()
+def run_experiment(runner: ExperimentRunner, filename: str) -> dict:
+    """Executa um experimento e anexa o nome do arquivo de origem."""
+    result = runner.run()
+    result["filename"] = filename
+    return result

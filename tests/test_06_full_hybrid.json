@@ -6,7 +6,7 @@
   "target_depth": 20,
   "filename_target_circuit": "results/target_circuits/target_seed_101",
   "target_statevector_data": [],
-  "resume_from_checkpoint": false,
+  "resume_from_checkpoint": true,
   "phases": [
     {
       "use_stepsize": true,
@@ -17,7 +17,7 @@
       "survivor_selection": "TOURNAMENT",
       "use_fitness_sharing": true,
       "crossover_strategy": "BLOCKWISE",
-      "generations": 500,
+      "generations": 1000,
       "fidelity_threshold_stop": null
     }
   ]

@@ -15,7 +15,7 @@
       "use_bandit_mutation": false,
       "parent_selection": "TOURNAMENT",
       "survivor_selection": "TOURNAMENT",
-      "use_fitness_sharing": false,
+      "use_fitness_sharing": true,
       "crossover_strategy": "BLOCKWISE",
       "generations": 1000,
       "fidelity_threshold_stop": null
