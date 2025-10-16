@@ -1,5 +1,4 @@
 from typing import List, Dict
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -13,7 +12,7 @@ def _clip(values):
 
 
 class EvolutionPlotter(IPlotter):
-    """Generates a detailed evolution plot with per-phase configuration boxes."""
+    """Generates a detailed evolution plot with configuration boxes positioned below the graph."""
 
     def plot(self, data: ResultData, output_path: str, config_info: Dict = None):
         print(f"Gerando gráfico em {output_path}...")
@@ -27,7 +26,10 @@ class EvolutionPlotter(IPlotter):
         lower_fill = _clip(avg_fitness - std_dev)
         upper_fill = _clip(avg_fitness + std_dev)
 
-        fig, ax1 = plt.subplots(figsize=(14, 7))
+        # === Layout com área inferior extra ===
+        fig = plt.figure(figsize=(14, 9))  # altura aumentada
+        gs = fig.add_gridspec(2, 1, height_ratios=[3.5, 1])  # 2 linhas (gráfico + área de configuração)
+        ax1 = fig.add_subplot(gs[0])
 
         # --- Eixo primário: Fitness ---
         color = 'tab:blue'
@@ -48,30 +50,26 @@ class EvolutionPlotter(IPlotter):
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.set_ylim(0, 1.05)
 
-        # --- Legendas combinadas ---
+        # --- Legenda combinada ---
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax2.legend(lines1 + lines2, labels1 + labels2, loc='center right')
 
-        plt.title('Evolução do Fitness e Diversidade Genética por Geração', pad=20)
+        plt.suptitle('Evolução do Fitness e Diversidade Genética por Geração', fontsize=13, y=0.94)
 
-        # --- Configurações (Caixas por Phase) ---
+        # === Área inferior: Detalhes das Phases ===
+        ax_config = fig.add_subplot(gs[1])
+        ax_config.axis('off')  # remove eixos
+
         if config_info and "phases" in config_info:
             phases = config_info["phases"]
             num_phases = len(phases)
-
-            # Paleta de cores distintas para as boxes
             phase_colors = plt.cm.tab10(np.linspace(0, 1, num_phases))
 
-            # posição vertical inicial
-            y_base = 0.13
-            y_step = 0.11  # espaçamento entre caixas
+            # Cálculo de espaçamento horizontal uniforme
+            x_positions = np.linspace(0.02, 0.9, num_phases)
 
-            for i, phase in enumerate(phases):
-                y_pos = y_base + i * y_step
-                color_box = phase_colors[i]
-
-                # Apenas itens relevantes
+            for i, (phase, color_box) in enumerate(zip(phases, phase_colors)):
                 true_flags = []
                 if phase.get("use_stepsize"): true_flags.append("StepSize")
                 if phase.get("use_adaptive_rates"): true_flags.append("AdaptiveRates")
@@ -84,34 +82,33 @@ class EvolutionPlotter(IPlotter):
                     f"Gerações: {phase.get('generations', '-')}",
                     f"ParentSel: {phase.get('parent_selection', '-')}",
                     f"SurvivorSel: {phase.get('survivor_selection', '-')}",
-                    f"Crossover: {phase.get('crossover_strategy', '-')}",
+                    f"Crossover: {phase.get('crossover_strategy', '-')}"
                 ]
                 if true_flags:
                     text_lines.append("Ativos: " + ", ".join(true_flags))
 
-                text = "\n".join(text_lines)
-
-                # Caixa de texto para cada phase
-                fig.text(
-                    0.02, y_pos,
-                    text,
+                ax_config.text(
+                    x_positions[i],
+                    0.5,
+                    "\n".join(text_lines),
                     fontsize=9,
-                    va='bottom',
+                    va='center',
                     ha='left',
                     color='black',
                     bbox=dict(
-                        boxstyle="round,pad=0.5",
-                        facecolor=(color_box[0], color_box[1], color_box[2], 0.15),
+                        boxstyle="round,pad=0.4",
+                        facecolor=(color_box[0], color_box[1], color_box[2], 0.2),
                         edgecolor=color_box,
                         linewidth=1.2,
-                        alpha=1.0
-                    )
+                    ),
+                    transform=ax_config.transAxes
                 )
 
-        fig.tight_layout(rect=(0, 0, 1, 0.97))
+        plt.subplots_adjust(hspace=0.35)
         plt.savefig(output_path, bbox_inches='tight', dpi=200)
         plt.close()
         print("✅ Gráfico salvo com sucesso.")
+
 
 
 class AggregatePlotter:
