@@ -1,19 +1,21 @@
+from typing import List, Dict
+
 import matplotlib.pyplot as plt
-from typing import List
 import numpy as np
+
 from .interfaces import IPlotter
 from .data_models import ResultData
 
 
 def _clip(values):
-    """Garante que todos os valores fiquem entre 0 e 1."""
+    """Ensure all values are within [0, 1]."""
     return np.clip(values, 0.0, 1.0)
 
 
 class EvolutionPlotter(IPlotter):
-    """Gera um gráfico da evolução do fitness e da diversidade."""
+    """Generates a detailed evolution plot with per-phase configuration boxes."""
 
-    def plot(self, data: ResultData, output_path: str):
+    def plot(self, data: ResultData, output_path: str, config_info: Dict = None):
         print(f"Gerando gráfico em {output_path}...")
 
         generations = range(data.generation_count)
@@ -22,25 +24,23 @@ class EvolutionPlotter(IPlotter):
         best_fitness = _clip(np.array(data.best_fitness_per_generation))
         diversity = _clip(np.array(data.structural_diversity_per_generation))
 
-        # Limita os intervalos de preenchimento para evitar sair de [0, 1]
         lower_fill = _clip(avg_fitness - std_dev)
         upper_fill = _clip(avg_fitness + std_dev)
 
         fig, ax1 = plt.subplots(figsize=(14, 7))
 
-        # Eixo Y primário (Fitness)
+        # --- Eixo primário: Fitness ---
         color = 'tab:blue'
         ax1.set_xlabel('Geração')
         ax1.set_ylabel('Fitness', color=color)
         ax1.plot(generations, best_fitness, color=color, linestyle='-', label='Melhor Fitness')
         ax1.plot(generations, avg_fitness, color=color, linestyle='--', label='Fitness Médio')
-        ax1.fill_between(generations, lower_fill, upper_fill, alpha=0.2, color=color)
-
+        ax1.fill_between(generations, lower_fill, upper_fill, alpha=0.25, color=color)
         ax1.tick_params(axis='y', labelcolor=color)
         ax1.grid(True, which='both', linestyle=':', linewidth=0.5)
         ax1.set_ylim(0, 1.05)
 
-        # Eixo Y secundário (Diversidade)
+        # --- Eixo secundário: Diversidade ---
         ax2 = ax1.twinx()
         color = 'tab:red'
         ax2.set_ylabel('Diversidade Estrutural', color=color)
@@ -48,13 +48,67 @@ class EvolutionPlotter(IPlotter):
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.set_ylim(0, 1.05)
 
-        # Legendas combinadas
+        # --- Legendas combinadas ---
         lines1, labels1 = ax1.get_legend_handles_labels()
         lines2, labels2 = ax2.get_legend_handles_labels()
         ax2.legend(lines1 + lines2, labels1 + labels2, loc='center right')
 
-        plt.title('Evolução do Fitness e Diversidade Genética por Geração', pad=20)  # afasta o título do topo
-        fig.tight_layout(rect=(0, 0, 1, 0.97))  # reserva espaço extra para o título
+        plt.title('Evolução do Fitness e Diversidade Genética por Geração', pad=20)
+
+        # --- Configurações (Caixas por Phase) ---
+        if config_info and "phases" in config_info:
+            phases = config_info["phases"]
+            num_phases = len(phases)
+
+            # Paleta de cores distintas para as boxes
+            phase_colors = plt.cm.tab10(np.linspace(0, 1, num_phases))
+
+            # posição vertical inicial
+            y_base = 0.13
+            y_step = 0.11  # espaçamento entre caixas
+
+            for i, phase in enumerate(phases):
+                y_pos = y_base + i * y_step
+                color_box = phase_colors[i]
+
+                # Apenas itens relevantes
+                true_flags = []
+                if phase.get("use_stepsize"): true_flags.append("StepSize")
+                if phase.get("use_adaptive_rates"): true_flags.append("AdaptiveRates")
+                if phase.get("use_weighted_fitness"): true_flags.append("WeightedFitness")
+                if phase.get("use_fitness_sharing"): true_flags.append("FitnessSharing")
+                if phase.get("use_bandit_mutation"): true_flags.append("BanditMutation")
+
+                text_lines = [
+                    f"Phase {i + 1}",
+                    f"Gerações: {phase.get('generations', '-')}",
+                    f"ParentSel: {phase.get('parent_selection', '-')}",
+                    f"SurvivorSel: {phase.get('survivor_selection', '-')}",
+                    f"Crossover: {phase.get('crossover_strategy', '-')}",
+                ]
+                if true_flags:
+                    text_lines.append("Ativos: " + ", ".join(true_flags))
+
+                text = "\n".join(text_lines)
+
+                # Caixa de texto para cada phase
+                fig.text(
+                    0.02, y_pos,
+                    text,
+                    fontsize=9,
+                    va='bottom',
+                    ha='left',
+                    color='black',
+                    bbox=dict(
+                        boxstyle="round,pad=0.5",
+                        facecolor=(color_box[0], color_box[1], color_box[2], 0.15),
+                        edgecolor=color_box,
+                        linewidth=1.2,
+                        alpha=1.0
+                    )
+                )
+
+        fig.tight_layout(rect=(0, 0, 1, 0.97))
         plt.savefig(output_path, bbox_inches='tight', dpi=200)
         plt.close()
         print("✅ Gráfico salvo com sucesso.")
