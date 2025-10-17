@@ -26,7 +26,7 @@ class TestConfigLoader:
     def __init__(self, tests_dir: Path):
         self.tests_dir = tests_dir
         if not self.tests_dir.exists():
-          raise FileNotFoundError(f"Tests directory not found: {self.tests_dir}")
+            raise FileNotFoundError(f"Tests directory not found: {self.tests_dir}")
 
     @staticmethod
     def _save_circuit_details(circuit: Circuit, adapter: IQuantumCircuitAdapter, filepath_base: str):

@@ -106,11 +106,16 @@ class EvolutionPlotter(IPlotter):
             x_positions = np.linspace(0.02, 0.9, num_phases)
             for i, (phase, color_box) in enumerate(zip(phases, phase_colors)):
                 true_flags = []
-                if phase.get("use_stepsize"): true_flags.append("StepSize")
-                if phase.get("use_adaptive_rates"): true_flags.append("AdaptiveRates")
-                if phase.get("use_weighted_fitness"): true_flags.append("WeightedFitness")
-                if phase.get("use_fitness_sharing"): true_flags.append("FitnessSharing")
-                if phase.get("use_bandit_mutation"): true_flags.append("BanditMutation")
+                if phase.get("use_stepsize"):
+                    true_flags.append("StepSize")
+                if phase.get("use_adaptive_rates"):
+                    true_flags.append("AdaptiveRates")
+                if phase.get("use_weighted_fitness"):
+                    true_flags.append("WeightedFitness")
+                if phase.get("use_fitness_sharing"):
+                    true_flags.append("FitnessSharing")
+                if phase.get("use_bandit_mutation"):
+                    true_flags.append("BanditMutation")
 
                 text_lines = [
                     f"Phase {i + 1}",

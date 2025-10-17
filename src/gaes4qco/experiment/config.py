@@ -76,6 +76,7 @@ class ExperimentConfig:
         data = asdict(self).copy()
         data.pop("target_statevector_data", None)
         data.pop("resume_from_checkpoint", None)
+
         def custom_serializer(o):
             if is_dataclass(o):
                 return asdict(o)  # converte dataclass para dict

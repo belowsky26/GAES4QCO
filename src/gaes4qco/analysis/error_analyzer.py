@@ -18,7 +18,7 @@ class ErrorAnalyzer:
         # Estado com maior probabilidade no target
         ideal_probs = target_statevector.probabilities_dict()
         print(ideal_probs)
-        #correct_state_str = max(ideal_probs, key=ideal_probs.get)
+        # correct_state_str = max(ideal_probs, key=ideal_probs.get)
         # Executa o circuito
         result = self._executor.execute(circuit, shots, measure=False)
         print(result)
@@ -35,7 +35,7 @@ class ErrorAnalyzer:
                 print(f"Probabilidade de sucesso: {success_probability:.10%}, Taxa de erro: {error_rate:.2%}")
                 errors_rates.append(error_rate)
                 # Se o resultado for statevector
-            return sum(errors_rates)/len(errors_rates)
+            return sum(errors_rates) / len(errors_rates)
         elif isinstance(result, Statevector):
             # Probabilidade de medir o estado correto
             success_probability = state_fidelity(result, target_statevector)

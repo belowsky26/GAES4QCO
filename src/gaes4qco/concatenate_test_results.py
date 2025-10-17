@@ -3,6 +3,7 @@
 from pathlib import Path
 from analysis.json_result_concatenator import JsonResultConcatenator
 
+
 def main():
     project_root = Path(__file__).resolve().parents[2]
     tests_dir = project_root / "tests"
@@ -15,6 +16,7 @@ def main():
     print("\n=== ✅ CONCATENAÇÃO FINALIZADA ===")
     for path in concatenated_files:
         print(f" • {path.name}")
+
 
 if __name__ == "__main__":
     main()

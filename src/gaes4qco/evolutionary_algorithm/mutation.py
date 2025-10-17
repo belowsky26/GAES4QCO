@@ -107,7 +107,6 @@ class BanditMutationSelector(IMutationPopulation):
         return Population(mutated_individuals)
 
 
-
 # --- Classes de Estratégia de Mutação Específicas ---
 
 class SwapColumnsMutation(IMutationStrategy):

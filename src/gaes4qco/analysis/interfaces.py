@@ -19,6 +19,7 @@ class IPlotter(ABC):
         """Gera e salva um gráfico a partir de um objeto ResultData."""
         pass
 
+
 class IDistanceMetric(ABC):
 
     @staticmethod

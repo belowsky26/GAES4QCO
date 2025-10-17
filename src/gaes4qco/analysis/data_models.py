@@ -47,7 +47,6 @@ class ResultData:
         """Melhor fidelidade (máximo) de cada geração."""
         return [max(gen) if gen else 0.0 for gen in self.fidelity_per_generation]
 
-
     @property
     def average_depth_per_generation(self) -> List[float]:
         """Profundidade média das estruturas por geração (se disponível)."""
