@@ -1,4 +1,5 @@
 from typing import List, Dict
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -12,7 +13,7 @@ def _clip(values):
 
 
 class EvolutionPlotter(IPlotter):
-    """Generates a detailed evolution plot with configuration boxes positioned below the graph."""
+    """Generates a detailed evolution plot with clear phase markers and info boxes."""
 
     def plot(self, data: ResultData, output_path: str, config_info: Dict = None):
         print(f"Gerando gráfico em {output_path}...")
@@ -27,8 +28,8 @@ class EvolutionPlotter(IPlotter):
         upper_fill = _clip(avg_fitness + std_dev)
 
         # === Layout com área inferior extra ===
-        fig = plt.figure(figsize=(14, 9))  # altura aumentada
-        gs = fig.add_gridspec(2, 1, height_ratios=[3.5, 1])  # 2 linhas (gráfico + área de configuração)
+        fig = plt.figure(figsize=(14, 9))
+        gs = fig.add_gridspec(2, 1, height_ratios=[3.5, 1])
         ax1 = fig.add_subplot(gs[0])
 
         # --- Eixo primário: Fitness ---
@@ -41,6 +42,7 @@ class EvolutionPlotter(IPlotter):
         ax1.tick_params(axis='y', labelcolor=color)
         ax1.grid(True, which='both', linestyle=':', linewidth=0.5)
         ax1.set_ylim(0, 1.05)
+        ax1.set_xlim(0, data.generation_count - 1)
 
         # --- Eixo secundário: Diversidade ---
         ax2 = ax1.twinx()
@@ -49,6 +51,41 @@ class EvolutionPlotter(IPlotter):
         ax2.plot(generations, diversity, color=color, linestyle='-.', label='Diversidade')
         ax2.tick_params(axis='y', labelcolor=color)
         ax2.set_ylim(0, 1.05)
+
+        # --- Marcação visual das fases ---
+        if config_info and "phases" in config_info:
+            phases = config_info["phases"]
+            phase_colors = plt.cm.Set2(np.linspace(0, 1, len(phases)))
+
+            current_start = 0
+            for i, (phase, color_box) in enumerate(zip(phases, phase_colors)):
+                phase_len = phase.get("generations", 0)
+                start_gen = current_start
+
+                # Somente da segunda fase em diante: linha vertical marcando início
+                if i > 0:
+                    ax1.axvline(
+                        x=start_gen,
+                        color=color_box,
+                        linestyle='--',
+                        linewidth=1.3,
+                        alpha=0.7,
+                    )
+
+                # Numeração da geração de início da phase
+                ax1.text(
+                    start_gen,
+                    -0.08,  # abaixo do eixo X
+                    str(start_gen),
+                    color=color_box,
+                    fontsize=9,
+                    fontweight='bold',
+                    ha='center',
+                    va='top',
+                    transform=ax1.get_xaxis_transform()
+                )
+
+                current_start += phase_len
 
         # --- Legenda combinada ---
         lines1, labels1 = ax1.get_legend_handles_labels()
@@ -59,16 +96,14 @@ class EvolutionPlotter(IPlotter):
 
         # === Área inferior: Detalhes das Phases ===
         ax_config = fig.add_subplot(gs[1])
-        ax_config.axis('off')  # remove eixos
+        ax_config.axis('off')
 
         if config_info and "phases" in config_info:
             phases = config_info["phases"]
             num_phases = len(phases)
             phase_colors = plt.cm.tab10(np.linspace(0, 1, num_phases))
 
-            # Cálculo de espaçamento horizontal uniforme
             x_positions = np.linspace(0.02, 0.9, num_phases)
-
             for i, (phase, color_box) in enumerate(zip(phases, phase_colors)):
                 true_flags = []
                 if phase.get("use_stepsize"): true_flags.append("StepSize")
@@ -108,7 +143,6 @@ class EvolutionPlotter(IPlotter):
         plt.savefig(output_path, bbox_inches='tight', dpi=200)
         plt.close()
         print("✅ Gráfico salvo com sucesso.")
-
 
 
 class AggregatePlotter:

@@ -4,8 +4,8 @@ from qiskit.quantum_info import Statevector
 
 from containers import QuantumCircuitContainer
 from experiment.config import ExperimentConfig
-from gaes4qco.containers import AppContainer
-from gaes4qco.quantum_circuit.circuit_factory import GateFactory, CircuitFactory
+from containers import AppContainer
+from quantum_circuit.circuit_factory import GateFactory, CircuitFactory
 from quantum_circuit.qiskit_adapter import QiskitAdapter
 
 
@@ -15,8 +15,8 @@ def main():
     em um simulador com ruído.
     """
     # --- Configuração ---
-    CIRCUIT_TO_TEST_PATH = r"D:\Estudos\Projeto\GAES4QCO\results\target_circuits\target_seed_101.json"
-    circuit_optimized_path = r"D:\Estudos\Projeto\GAES4QCO\results\target_circuits\target_seed_101.json"
+    CIRCUIT_TO_TEST_PATH = r"/home/LuizMFL/Projects/GAES4QCO/results/target_circuits/target_seed_101.json"
+    circuit_optimized_path = r"/home/LuizMFL/Projects/GAES4QCO/results/pha=0_FD_si_to_to_FX_BD_ST_NL/8791165d_circuits/rank_000_fit_0.9374_depth_20.json"
     SHOTS = 2**20
     container = AppContainer()
     container.config.from_dict({
